@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+} 
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  orders    Order[]
+}
+
+model Product {
+  id        String   @id @default(uuid())
+  name      String
+  price     Float
+  stock     Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  orderItems OrderItem[]
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  status    OrderStatus @default(PENDING)
+  total     Float       @default(0)
+  createdAt DateTime    @default(now())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  items     OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Float
+  subtotal  Float
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+}
+
+enum Role {
+  ADMIN
+  CASHIER
+  WAITER
+  KITCHEN
+}
+
+enum OrderStatus {
+  PENDING
+  IN_PROGRESS
+  READY
+  PAID
+  CANCELED
+}
