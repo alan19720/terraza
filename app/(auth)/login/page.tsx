@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { PAGE_ROUTES } from '@/lib/config/routes';
+import { Mail, Lock, Eye, EyeOff, LogIn, Loader2, AlertCircle } from 'lucide-react';
+import Image from 'next/image';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -12,6 +14,7 @@ export default function LoginPage() {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -22,12 +25,10 @@ export default function LoginPage() {
 
         try {
             await login({ email, password });
-
-            // Redirect to original destination or dashboard
             const redirect = searchParams.get('redirect') || PAGE_ROUTES.DASHBOARD;
             router.push(redirect);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Login failed');
+            setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
         } finally {
             setIsLoading(false);
         }
@@ -35,90 +36,111 @@ export default function LoginPage() {
 
     if (authLoading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-                <div className="text-lg text-gray-600">Loading...</div>
+            <div className="flex min-h-screen items-center justify-center login-bg">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="w-10 h-10 text-white animate-spin" />
+                    <p className="text-white/60 text-sm tracking-widest uppercase">Cargando...</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
-            <div className="w-full max-w-md">
-                {/* Login Card */}
-                <div className="rounded-2xl bg-white p-8 shadow-xl">
-                    {/* Header */}
-                    <div className="mb-8 text-center">
-                        <h1 className="text-3xl font-bold text-gray-900">POS Mariscos</h1>
-                        <p className="mt-2 text-sm text-gray-600">Sign in to your account</p>
+        <div className="relative min-h-screen flex items-center justify-center px-4 py-12 login-bg overflow-hidden">
+            {/* Decorative ambient blobs */}
+            <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-[#F7B731]/15 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-[-15%] right-[-10%] w-[600px] h-[600px] bg-[#1a6fa0]/20 rounded-full blur-[140px] pointer-events-none" />
+            <div className="absolute top-[40%] right-[20%] w-[300px] h-[300px] bg-[#EB3B5A]/8 rounded-full blur-[100px] pointer-events-none" />
+
+            {/* Card */}
+            <div className="relative z-10 w-full max-w-[420px]">
+                <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] p-8 sm:p-10 border border-white/50">
+                    {/* Brand Header */}
+                    <div className="text-center mb-8">
+                        <div className="relative w-72 h-44 mx-auto mb-1">
+                            <Image
+                                src="/logos/logo2.png"
+                                alt="Terraza Granados"
+                                fill
+                                className="object-contain"
+                                priority
+                            />
+                        </div>
                     </div>
 
-                    {/* Error Message */}
+                    {/* Error */}
                     {error && (
-                        <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4">
-                            <p className="text-sm text-red-600">{error}</p>
+                        <div className="mb-5 flex items-center gap-2.5 rounded-xl bg-accent/5 border border-accent/15 px-4 py-3 login-shake">
+                            <AlertCircle className="w-4 h-4 text-accent shrink-0" />
+                            <p className="text-sm text-accent">{error}</p>
                         </div>
                     )}
 
-                    {/* Login Form */}
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Email Input */}
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                                Email Address
+                    {/* Form */}
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-foreground/60 pl-0.5">
+                                Correo electrónico
                             </label>
-                            <input
-                                id="email"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                                placeholder="you@example.com"
-                                disabled={isLoading}
-                            />
+                            <div className="relative group">
+                                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-foreground/25 group-focus-within:text-primary/60 transition-colors" />
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full h-11 rounded-lg bg-foreground/3 border border-foreground/10 pl-10 pr-4 text-foreground placeholder-foreground/25 focus:outline-none focus:ring-2 focus:ring-primary/15 focus:border-primary/30 focus:bg-white transition-all text-sm"
+                                    placeholder="tu@correo.com"
+                                    required
+                                    autoComplete="email"
+                                />
+                            </div>
                         </div>
 
-                        {/* Password Input */}
-                        <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                                Password
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-foreground/60 pl-0.5">
+                                Contraseña
                             </label>
-                            <input
-                                id="password"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                                placeholder="••••••••"
-                                disabled={isLoading}
-                            />
+                            <div className="relative group">
+                                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-foreground/25 group-focus-within:text-primary/60 transition-colors" />
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full h-11 rounded-lg bg-foreground/3 border border-foreground/10 pl-10 pr-10 text-foreground placeholder-foreground/25 focus:outline-none focus:ring-2 focus:ring-primary/15 focus:border-primary/30 focus:bg-white transition-all text-sm"
+                                    placeholder="••••••••"
+                                    required
+                                    autoComplete="current-password"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-foreground/25 hover:text-foreground/50 transition-colors cursor-pointer"
+                                    tabIndex={-1}
+                                >
+                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
+                            </div>
                         </div>
 
-                        {/* Submit Button */}
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            className="w-full h-11 rounded-lg bg-primary hover:bg-primary/90 active:bg-primary text-white font-medium text-sm shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-1 cursor-pointer"
                         >
-                            {isLoading ? 'Signing in...' : 'Sign In'}
+                            {isLoading ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <LogIn className="w-4 h-4" />
+                            )}
+                            {isLoading ? 'Ingresando...' : 'Ingresar'}
                         </button>
                     </form>
 
-                    {/* Footer */}
-                    <div className="mt-6 text-center">
-                        <p className="text-xs text-gray-500">
-                            Secure login with JWT authentication
+                    <div className="mt-8 pt-5 border-t border-foreground/5 text-center">
+                        <p className="text-foreground/25 text-[11px]">
+                            Terraza Granados &copy; {new Date().getFullYear()} &middot; POS v1.0
                         </p>
                     </div>
-                </div>
-
-                {/* Demo Credentials Info */}
-                <div className="mt-4 rounded-lg bg-blue-50 border border-blue-200 p-4">
-                    <p className="text-xs text-blue-800 font-medium mb-2">Demo Credentials:</p>
-                    <p className="text-xs text-blue-600">
-                        You'll need to create a user in the database first using Prisma Studio or migrations.
-                    </p>
                 </div>
             </div>
         </div>

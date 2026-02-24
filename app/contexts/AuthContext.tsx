@@ -9,18 +9,30 @@ interface AuthContextType {
     isLoading: boolean;
     isAuthenticated: boolean;
     login: (credentials: LoginCredentials) => Promise<void>;
-    logout: () => void;
+    logout: () => Promise<void>;
     refreshAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Local storage key for user data only
-const USER_KEY = 'user';
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+
+    /**
+     * Logout user and clear cookies
+     */
+    const logout = useCallback(async () => {
+        setUser(null);
+        try {
+            await fetch(AUTH_ROUTES.LOGOUT, {
+                method: 'POST',
+                credentials: 'include',
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+    }, []);
 
     /**
      * Refresh authentication tokens (stored in httpOnly cookies)
@@ -29,21 +41,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             const response = await fetch(AUTH_ROUTES.REFRESH, {
                 method: 'POST',
-                credentials: 'include', // Important: include cookies
+                credentials: 'include',
             });
 
             if (!response.ok) {
                 throw new Error('Token refresh failed');
             }
-
-            // Tokens are automatically set in cookies by the server
-            // No need to handle them client-side
         } catch (error) {
             console.error('Token refresh error:', error);
-            // If refresh fails, logout user
             logout();
         }
-    }, []);
+    }, [logout]);
 
     /**
      * Login user with credentials
@@ -55,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include', // Important: include cookies
+                credentials: 'include',
                 body: JSON.stringify(credentials),
             });
 
@@ -66,11 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
 
             if (result.success && result.data?.user) {
-                const { user } = result.data;
-
-                // Store user data (tokens are in httpOnly cookies)
-                setUser(user);
-                localStorage.setItem(USER_KEY, JSON.stringify(user));
+                setUser(result.data.user);
             }
         } catch (error) {
             console.error('Login error:', error);
@@ -79,44 +83,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     /**
-     * Logout user and clear cookies
+     * Get current user from server (Source of Truth: Cookies)
      */
-    const logout = useCallback(() => {
-        setUser(null);
-        localStorage.removeItem(USER_KEY);
+    const checkUserIdentity = useCallback(async () => {
+        try {
+            const response = await fetch(AUTH_ROUTES.ME, {
+                method: 'GET',
+                credentials: 'include',
+            });
 
-        // Call logout endpoint to clear cookies
-        fetch(AUTH_ROUTES.LOGOUT, {
-            method: 'POST',
-            credentials: 'include',
-        }).catch(console.error);
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                setUser(result.data.user);
+            } else {
+                setUser(null);
+            }
+        } catch (err) {
+            setUser(null);
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
 
     /**
-     * Load user data from localStorage on mount
-     * Tokens are in httpOnly cookies, managed by browser
+     * Initialization on mount
      */
     useEffect(() => {
-        const storedUser = localStorage.getItem(USER_KEY);
-
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-
-        setIsLoading(false);
-    }, []);
+        checkUserIdentity();
+    }, [checkUserIdentity]);
 
     /**
-     * Auto-refresh tokens before expiry
-     * Access token expires in 1 hour, refresh at 50 minutes
+     * Auto-refresh tokens before expiry (50 min)
      */
     useEffect(() => {
         if (!user) return;
 
-        // Refresh token every 50 minutes (before 1 hour expiry)
         const refreshInterval = setInterval(() => {
             refreshAuth();
-        }, 50 * 60 * 1000); // 50 minutes
+        }, 50 * 60 * 1000);
 
         return () => clearInterval(refreshInterval);
     }, [user, refreshAuth]);
@@ -133,15 +138,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-/**
- * Hook to use auth context
- */
 export function useAuth() {
     const context = useContext(AuthContext);
-
     if (context === undefined) {
         throw new Error('useAuth must be used within an AuthProvider');
     }
-
     return context;
 }

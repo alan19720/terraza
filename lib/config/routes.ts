@@ -12,6 +12,7 @@ export const AUTH_ROUTES = {
     LOGIN: `${API_BASE}/auth/login`,
     LOGOUT: `${API_BASE}/auth/logout`,
     REFRESH: `${API_BASE}/auth/refresh`,
+    ME: `${API_BASE}/auth/me`,
 } as const;
 
 /**
