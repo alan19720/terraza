@@ -29,7 +29,6 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
                 select: {
                     id: true,
                     name: true,
-                    description: true,
                 },
             },
             active: true,
@@ -137,7 +136,6 @@ export async function validateUser(userId: string): Promise<AuthUser> {
                 select: {
                     id: true,
                     name: true,
-                    description: true,
                 },
             },
             active: true,

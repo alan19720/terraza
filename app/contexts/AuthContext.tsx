@@ -117,6 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
      * Auto-refresh tokens before expiry (50 min)
      */
     useEffect(() => {
+        console.log('user', user);
         if (!user) return;
 
         const refreshInterval = setInterval(() => {

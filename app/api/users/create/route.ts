@@ -72,11 +72,9 @@ export async function POST(request: NextRequest) {
                     select: {
                         id: true,
                         name: true,
-                        description: true,
                     },
                 },
                 active: true,
-                createdAt: true,
             },
         });
 

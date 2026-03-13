@@ -1,11 +1,15 @@
 'use client';
 
 import { useAuth } from '@/app/contexts/AuthContext';
-import { LogOut, Bell, Search } from 'lucide-react';
+import { LogOut, Bell, Search, Menu } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { PAGE_ROUTES } from '@/lib/config/routes';
 
-export default function DashboardHeader() {
+type Props = {
+    onMenuToggle?: () => void;
+};
+
+export default function DashboardHeader({ onMenuToggle }: Props) {
     const { user, logout } = useAuth();
     const router = useRouter();
 
@@ -15,9 +19,18 @@ export default function DashboardHeader() {
     };
 
     return (
-        <header className="h-14 bg-white sticky top-0 z-40 px-6 flex items-center justify-between border-b border-gray-100">
+        <header className="h-14 bg-white sticky top-0 z-40 px-4 lg:px-6 flex items-center justify-between border-b border-gray-100">
             <div className="flex items-center gap-3 flex-1 max-w-md">
-                <div className="relative w-full group">
+                {/* Hamburger — visible on tablet and below */}
+                <button
+                    type="button"
+                    onClick={onMenuToggle}
+                    className="lg:hidden p-2 -ml-1 rounded-lg hover:bg-gray-100 text-gray-500 cursor-pointer"
+                >
+                    <Menu className="w-5 h-5" />
+                </button>
+
+                <div className="relative w-full group hidden sm:block">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 group-focus-within:text-primary transition-colors" />
                     <input
                         type="text"
@@ -39,7 +52,7 @@ export default function DashboardHeader() {
                     <div className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center text-xs font-semibold">
                         {user?.name?.charAt(0)}
                     </div>
-                    <div className="hidden sm:block">
+                    <div className="hidden md:block">
                         <p className="text-sm font-medium text-gray-800 leading-tight">{user?.name}</p>
                         <p className="text-[10px] text-gray-400 leading-tight">{user?.role.name}</p>
                     </div>

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { X } from 'lucide-react';
 import {
     LayoutDashboard,
     UtensilsCrossed,
@@ -22,11 +23,16 @@ const menuItems = [
     { icon: BarChart3, label: 'Reportes', href: '/dashboard/reports' },
 ];
 
-export default function Sidebar() {
+type Props = {
+    mobileOpen?: boolean;
+    onMobileClose?: () => void;
+};
+
+export default function Sidebar({ mobileOpen, onMobileClose }: Props) {
     const pathname = usePathname();
 
-    return (
-        <aside className="fixed left-0 top-0 h-screen w-[250px] bg-white border-r border-gray-100 flex flex-col z-50">
+    const sidebarContent = (
+        <>
             {/* Logo */}
             <div className="px-5 pt-5 pb-3">
                 <div className="relative w-full h-24">
@@ -52,6 +58,7 @@ export default function Sidebar() {
                         <Link
                             key={item.href}
                             href={item.href}
+                            onClick={onMobileClose}
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${isActive
                                     ? 'bg-primary text-white'
                                     : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
@@ -69,12 +76,39 @@ export default function Sidebar() {
                 <div className="h-px bg-gray-100 mb-2" />
                 <Link
                     href="/dashboard/settings"
+                    onClick={onMobileClose}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-all group"
                 >
                     <Settings className="w-[18px] h-[18px]" />
                     <span className="text-[13px] font-medium">Ajustes</span>
                 </Link>
             </div>
-        </aside>
+        </>
+    );
+
+    return (
+        <>
+            {/* Desktop sidebar — hidden on tablet and below */}
+            <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-[250px] bg-white border-r border-gray-100 flex-col z-50">
+                {sidebarContent}
+            </aside>
+
+            {/* Mobile/Tablet drawer overlay */}
+            {mobileOpen && (
+                <div className="lg:hidden fixed inset-0 z-50 flex">
+                    <div className="absolute inset-0 bg-black/40" onClick={onMobileClose} />
+                    <aside className="relative w-[280px] max-w-[80vw] bg-white flex flex-col h-full shadow-2xl animate-slide-in">
+                        <button
+                            type="button"
+                            onClick={onMobileClose}
+                            className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 cursor-pointer z-10"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                        {sidebarContent}
+                    </aside>
+                </div>
+            )}
+        </>
     );
 }
