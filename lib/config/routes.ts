@@ -37,12 +37,20 @@ export const PRODUCT_ROUTES = {
 } as const;
 
 /**
- * Order endpoints (example for future use)
+ * Table endpoints
+ */
+export const TABLE_ROUTES = {
+    LIST: `${API_BASE}/tables`,
+    UPDATE: (id: string) => `${API_BASE}/tables/${id}`,
+} as const;
+
+/**
+ * Order endpoints
  */
 export const ORDER_ROUTES = {
-    LIST: `${API_BASE}/orders`,
+    LIST: `${API_BASE}/orders/list`,
     BY_ID: (id: string) => `${API_BASE}/orders/${id}`,
-    CREATE: `${API_BASE}/orders`,
+    CREATE: `${API_BASE}/orders/create`,
     UPDATE: (id: string) => `${API_BASE}/orders/${id}`,
     UPDATE_STATUS: (id: string) => `${API_BASE}/orders/${id}/status`,
 } as const;
@@ -54,6 +62,7 @@ export const PAGE_ROUTES = {
     HOME: '/',
     LOGIN: '/login',
     DASHBOARD: '/dashboard',
+    DASHBOARD_KITCHEN: '/dashboard/kitchen',
     PRODUCTS: '/products',
     ORDERS: '/orders',
     USERS: '/users',

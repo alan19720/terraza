@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { PAGE_ROUTES } from '@/lib/config/routes';
@@ -8,6 +8,18 @@ import { Mail, Lock, Eye, EyeOff, LogIn, Loader2, AlertCircle } from 'lucide-rea
 import Image from 'next/image';
 
 export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex min-h-screen items-center justify-center login-bg">
+                <Loader2 className="w-10 h-10 text-white animate-spin" />
+            </div>
+        }>
+            <LoginForm />
+        </Suspense>
+    );
+}
+
+function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { login, isLoading: authLoading } = useAuth();

@@ -49,3 +49,6 @@ export const {
 // Helper to check if in production
 export const isProduction = NODE_ENV === 'production';
 export const isDevelopment = NODE_ENV === 'development';
+
+// Restaurant timezone (Morelia, Michoacán)
+export const TIMEZONE = 'America/Mexico_City';
