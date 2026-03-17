@@ -23,6 +23,7 @@ export const USER_ROUTES = {
     LIST: `${API_BASE}/users`,
     BY_ID: (id: string) => `${API_BASE}/users/${id}`,
     CREATE: `${API_BASE}/users/create`,
+    UPDATE: (id: string) => `${API_BASE}/users/${id}`,
 } as const;
 
 /**
