@@ -75,6 +75,18 @@ export const ORDER_ROUTES = {
 } as const;
 
 /**
+ * Inventory endpoints
+ */
+export const INVENTORY_ROUTES = {
+    LIST: `${API_BASE}/inventory`,
+    CREATE: `${API_BASE}/inventory`,
+    UPDATE: (id: string) => `${API_BASE}/inventory/${id}`,
+    DELETE: (id: string) => `${API_BASE}/inventory/${id}`,
+    STOCK: `${API_BASE}/inventory/stock`,
+    MOVEMENTS: `${API_BASE}/inventory/stock`,
+} as const;
+
+/**
  * Page routes for navigation
  */
 export const PAGE_ROUTES = {
