@@ -10,6 +10,7 @@ import {
     ChefHat,
     Wallet,
     Package,
+    BookOpen,
     BarChart3,
     Users,
     Settings
@@ -21,6 +22,7 @@ const menuItems = [
     { icon: ChefHat, label: 'Cocina', href: '/dashboard/kitchen' },
     { icon: Wallet, label: 'Caja', href: '/dashboard/cashier' },
     { icon: Package, label: 'Inventario', href: '/dashboard/inventory' },
+    { icon: BookOpen, label: 'Menú', href: '/dashboard/menu' },
     { icon: BarChart3, label: 'Reportes', href: '/dashboard/reports' },
     { icon: Users, label: 'Usuarios', href: '/dashboard/users' },
 ];

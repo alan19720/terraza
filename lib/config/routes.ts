@@ -38,6 +38,24 @@ export const PRODUCT_ROUTES = {
 } as const;
 
 /**
+ * Meal endpoints
+ */
+export const MEAL_ROUTES = {
+    LIST: `${API_BASE}/meals`,
+    CREATE: `${API_BASE}/meals`,
+    UPDATE: (id: string) => `${API_BASE}/meals/${id}`,
+} as const;
+
+/**
+ * Category endpoints
+ */
+export const CATEGORY_ROUTES = {
+    LIST: `${API_BASE}/categories`,
+    CREATE: `${API_BASE}/categories`,
+    UPDATE: (id: string) => `${API_BASE}/categories/${id}`,
+} as const;
+
+/**
  * Table endpoints
  */
 export const TABLE_ROUTES = {
