@@ -10,24 +10,38 @@ type Table = {
     status: string;
 };
 
-export default function TablesPanel() {
+type Props = {
+    /** Súbelo desde el panel cuando cambien órdenes/mesas; vuelve a cargar mesas sin bloquear toda la tarjeta. */
+    refreshKey?: number;
+};
+
+export default function TablesPanel({ refreshKey = 0 }: Props) {
     const [tables, setTables] = useState<Table[]>([]);
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState<string | null>(null);
     const [openMenu, setOpenMenu] = useState<string | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
-    const fetchTables = useCallback(async () => {
-        setLoading(true);
+    const fetchTables = useCallback(async (quiet = false) => {
+        if (!quiet) setLoading(true);
         try {
             const res = await fetch('/api/tables', { credentials: 'include' });
             const data = await res.json();
             if (data.success) setTables(data.data.tables);
         } catch { /* silently fail */ }
-        finally { setLoading(false); }
+        finally {
+            if (!quiet) setLoading(false);
+        }
     }, []);
 
-    useEffect(() => { fetchTables(); }, [fetchTables]);
+    useEffect(() => {
+        void fetchTables(false);
+    }, [fetchTables]);
+
+    useEffect(() => {
+        if (refreshKey < 1) return;
+        void fetchTables(true);
+    }, [refreshKey, fetchTables]);
 
     useEffect(() => {
         if (!openMenu) return;
@@ -78,7 +92,7 @@ export default function TablesPanel() {
                 </div>
                 <button
                     type="button"
-                    onClick={fetchTables}
+                    onClick={() => void fetchTables(false)}
                     disabled={loading}
                     className="text-xs text-primary hover:text-primary/70 font-medium transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
                 >

@@ -1,9 +1,12 @@
 'use client';
 
-import { X, Clock, CircleCheck, CircleX, User, Hash, ChefHat, MessageSquare } from 'lucide-react';
+import { useState } from 'react';
+import { X, Clock, CircleCheck, CircleX, User, Hash, ChefHat, MessageSquare, PlusCircle, Loader2 } from 'lucide-react';
 import { OrderStatus, KitchenStatus } from '@/app/generated/prisma/enums';
+import { ORDER_ROUTES } from '@/lib/config/routes';
 
 type OrderDetail = {
+    id?: string;
     quantity: number;
     unitPrice: string;
     kitchenStatus: string;
@@ -17,13 +20,18 @@ type Order = {
     total: string;
     createdAt: string;
     table: { number: string };
-    user: { name: string };
+    user: { name: string; id?: string };
     orderDetails: OrderDetail[];
 };
 
 type Props = {
     order: Order | null;
     onClose: () => void;
+    canAddItems?: boolean;
+    onAddItems?: () => void;
+    /** Admin u dueño: cerrar / cancelar orden abierta */
+    canManageOrder?: boolean;
+    onOrderUpdated?: () => void;
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: typeof Clock }> = {
@@ -39,8 +47,46 @@ const KITCHEN_CONFIG: Record<string, { label: string; color: string; bg: string;
     [KitchenStatus.DELIVERED]: { label: 'Entregado', color: 'text-blue-600', bg: 'bg-blue-50', dot: 'bg-blue-400' },
 };
 
-export default function OrderDetailModal({ order, onClose }: Props) {
+export default function OrderDetailModal({
+    order,
+    onClose,
+    canAddItems,
+    onAddItems,
+    canManageOrder,
+    onOrderUpdated,
+}: Props) {
+    const [actionLoading, setActionLoading] = useState<'close' | 'cancel' | null>(null);
+
     if (!order) return null;
+
+    const patchStatus = async (status: typeof OrderStatus.CLOSED | typeof OrderStatus.CANCELED) => {
+        if (status === OrderStatus.CANCELED) {
+            const ok = window.confirm(
+                '¿Cancelar esta orden? La mesa quedará libre. Esta acción no borra el historial del día.'
+            );
+            if (!ok) return;
+        }
+        setActionLoading(status === OrderStatus.CLOSED ? 'close' : 'cancel');
+        try {
+            const res = await fetch(ORDER_ROUTES.UPDATE_STATUS(order.id), {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ status }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                alert(data.error ?? 'No se pudo actualizar');
+                return;
+            }
+            onOrderUpdated?.();
+            onClose();
+        } catch {
+            alert('Error de red');
+        } finally {
+            setActionLoading(null);
+        }
+    };
 
     const cfg = STATUS_CONFIG[order.status] ?? STATUS_CONFIG[OrderStatus.OPEN];
     const StatusIcon = cfg.icon;
@@ -101,7 +147,7 @@ export default function OrderDetailModal({ order, onClose }: Props) {
                             const subtotal = Number(detail.unitPrice) * detail.quantity;
                             const kitchen = KITCHEN_CONFIG[detail.kitchenStatus] ?? KITCHEN_CONFIG[KitchenStatus.PENDING];
                             return (
-                                <div key={i} className="rounded-lg border border-gray-100 p-3">
+                                <div key={detail.id ?? i} className="rounded-lg border border-gray-100 p-3">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3 min-w-0">
                                             <span className="text-xs font-semibold text-primary bg-primary/5 rounded-md w-7 h-7 flex items-center justify-center shrink-0">
@@ -134,10 +180,54 @@ export default function OrderDetailModal({ order, onClose }: Props) {
                     </div>
                 </div>
 
-                {/* Total */}
-                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between shrink-0">
-                    <span className="text-sm text-gray-500">Total</span>
-                    <span className="text-xl font-bold text-gray-900">${Number(order.total).toLocaleString()}</span>
+                {/* Total + actions */}
+                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 shrink-0 space-y-3">
+                    {canAddItems && order.status === OrderStatus.OPEN && onAddItems && (
+                        <button
+                            type="button"
+                            onClick={onAddItems}
+                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary/20 bg-primary text-white text-sm font-medium hover:bg-primary/90 cursor-pointer transition-colors"
+                        >
+                            <PlusCircle className="w-4 h-4 text-secondary" />
+                            Agregar platillos
+                        </button>
+                    )}
+
+                    {canManageOrder && order.status === OrderStatus.OPEN && (
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                disabled={!!actionLoading}
+                                onClick={() => patchStatus(OrderStatus.CLOSED)}
+                                className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 cursor-pointer disabled:opacity-50 transition-colors"
+                            >
+                                {actionLoading === 'close' ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <CircleCheck className="w-4 h-4" />
+                                )}
+                                Cerrar orden
+                            </button>
+                            <button
+                                type="button"
+                                disabled={!!actionLoading}
+                                onClick={() => patchStatus(OrderStatus.CANCELED)}
+                                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-red-200 bg-white text-red-600 text-sm font-medium hover:bg-red-50 cursor-pointer disabled:opacity-50 transition-colors"
+                            >
+                                {actionLoading === 'cancel' ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <CircleX className="w-4 h-4" />
+                                )}
+                                Cancelar
+                            </button>
+                        </div>
+                    )}
+
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-500">Total</span>
+                        <span className="text-xl font-bold text-gray-900">${Number(order.total).toLocaleString()}</span>
+                    </div>
                 </div>
             </div>
         </div>
