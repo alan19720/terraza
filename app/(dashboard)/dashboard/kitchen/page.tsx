@@ -1,6 +1,7 @@
 'use client';
-export default function KitchenPage(){
-    return (
-        <div className="min-h-screen bg-gray-50/80 flex"></div>
-    );
+
+import KitchenQueue from '@/app/components/Dashboard/KitchenQueue';
+
+export default function KitchenPage() {
+    return <KitchenQueue />;
 }

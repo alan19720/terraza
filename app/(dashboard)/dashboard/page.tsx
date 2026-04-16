@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import NewOrderModal from '@/app/components/Dashboard/NewOrderModal';
 import OrderDetailModal from '@/app/components/Dashboard/OrderDetailModal';
+import AddItemsToOrderModal from '@/app/components/Dashboard/AddItemsToOrderModal';
 import TablesPanel from '@/app/components/Dashboard/TablesPanel';
 import { ORDER_ROUTES } from '@/lib/config/routes';
 import { OrderStatus } from '@/app/generated/prisma/enums';
@@ -26,8 +27,15 @@ type OrderRow = {
     total: string;
     createdAt: string;
     table: { number: string };
-    user: { name: string };
-    orderDetails: { quantity: number; unitPrice: string; kitchenStatus: string; kitchenNotes: string | null; meal: { name: string } }[];
+    user: { id: string; name: string };
+    orderDetails: {
+        id: string;
+        quantity: number;
+        unitPrice: string;
+        kitchenStatus: string;
+        kitchenNotes: string | null;
+        meal: { name: string };
+    }[];
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: typeof Clock }> = {
@@ -42,21 +50,50 @@ export default function DashboardPage() {
     const [orders, setOrders] = useState<OrderRow[]>([]);
     const [ordersLoading, setOrdersLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState<OrderRow | null>(null);
+    const [addItemsForOrderId, setAddItemsForOrderId] = useState<string | null>(null);
+    const [tablesRefreshKey, setTablesRefreshKey] = useState(0);
 
     const isAdmin = user?.role?.name === 'ADMIN';
+
+    const bumpTablesRefresh = useCallback(() => {
+        setTablesRefreshKey((k) => k + 1);
+    }, []);
 
     const fetchOrders = useCallback(async () => {
         setOrdersLoading(true);
         try {
             const res = await fetch(ORDER_ROUTES.LIST, { credentials: 'include' });
             const data = await res.json();
-            if (data.success) setOrders(data.data.orders);
+            if (data.success) {
+                const list = data.data.orders as OrderRow[];
+                setOrders(list);
+                setSelectedOrder((prev) =>
+                    prev ? list.find((o) => o.id === prev.id) ?? null : null
+                );
+            }
         } catch {
             /* silently fail */
         } finally {
             setOrdersLoading(false);
         }
     }, []);
+
+    const refreshOrdersKeepSelection = useCallback(async () => {
+        try {
+            const res = await fetch(ORDER_ROUTES.LIST, { credentials: 'include' });
+            const data = await res.json();
+            if (data.success) {
+                const list = data.data.orders as OrderRow[];
+                setOrders(list);
+                setSelectedOrder((prev) =>
+                    prev ? list.find((o) => o.id === prev.id) ?? null : null
+                );
+                bumpTablesRefresh();
+            }
+        } catch {
+            /* silently fail */
+        }
+    }, [bumpTablesRefresh]);
 
     useEffect(() => {
         if (!isLoading && user) fetchOrders();
@@ -86,7 +123,7 @@ export default function DashboardPage() {
 
     const handleOrderCreated = () => {
         setNewOrderOpen(false);
-        fetchOrders();
+        void fetchOrders().then(() => bumpTablesRefresh());
     };
 
     return (
@@ -128,7 +165,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Tables */}
-                {isAdmin && <TablesPanel />}
+                {isAdmin && <TablesPanel refreshKey={tablesRefreshKey} />}
 
                 {/* Orders table */}
                 <div className="bg-white rounded-xl border border-gray-100">
@@ -141,7 +178,9 @@ export default function DashboardPage() {
                         </h2>
                         <button
                             type="button"
-                            onClick={fetchOrders}
+                            onClick={() => {
+                                void fetchOrders().then(() => bumpTablesRefresh());
+                            }}
                             disabled={ordersLoading}
                             className="text-xs text-primary hover:text-primary/70 font-medium transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
                         >
@@ -226,7 +265,35 @@ export default function DashboardPage() {
 
             <OrderDetailModal
                 order={selectedOrder}
-                onClose={() => setSelectedOrder(null)}
+                onClose={() => {
+                    setSelectedOrder(null);
+                    setAddItemsForOrderId(null);
+                }}
+                canAddItems={
+                    !!selectedOrder &&
+                    selectedOrder.status === OrderStatus.OPEN &&
+                    (isAdmin || selectedOrder.user.id === user?.id)
+                }
+                onAddItems={() => {
+                    if (selectedOrder) setAddItemsForOrderId(selectedOrder.id);
+                }}
+                canManageOrder={
+                    !!selectedOrder &&
+                    selectedOrder.status === OrderStatus.OPEN &&
+                    (isAdmin || selectedOrder.user.id === user?.id)
+                }
+                onOrderUpdated={refreshOrdersKeepSelection}
+            />
+
+            <AddItemsToOrderModal
+                open={!!addItemsForOrderId}
+                orderId={addItemsForOrderId ?? ''}
+                tableNumber={selectedOrder?.table.number ?? ''}
+                onClose={() => setAddItemsForOrderId(null)}
+                onSuccess={() => {
+                    setAddItemsForOrderId(null);
+                    refreshOrdersKeepSelection();
+                }}
             />
         </>
     );

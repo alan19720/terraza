@@ -2,41 +2,37 @@ import { prisma } from '@/prisma/prisma';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
 import { withAuth } from '@/lib/utils/with-auth';
 import { startOfToday } from '@/lib/utils/date';
-
-const ADMIN_ROLE = 'ADMIN';
+import { KitchenStatus, OrderStatus } from '@/app/generated/prisma/enums';
 
 /**
- * GET /api/orders/list
- * Returns today's orders. Admins see all orders; other roles see only their own.
+ * GET /api/kitchen/orders
+ * Today's open orders that still have work for kitchen (at least one line not ENTREGADO).
+ * Fully delivered lines remain on the order but the card drops off the queue once all are ENTREGADO.
  */
-export const GET = withAuth(async (_request, user) => {
+export const GET = withAuth(async () => {
     try {
-        const isAdmin = user.role?.name === ADMIN_ROLE;
-
         const startOfDay = startOfToday();
 
         const orders = await prisma.order.findMany({
             where: {
+                status: OrderStatus.OPEN,
                 createdAt: { gte: startOfDay },
-                ...(!isAdmin && { userId: user.userId }),
+                orderDetails: {
+                    some: { kitchenStatus: { not: KitchenStatus.DELIVERED } },
+                },
             },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { createdAt: 'asc' },
             select: {
                 id: true,
                 status: true,
-                total: true,
                 createdAt: true,
-                table: {
-                    select: { number: true },
-                },
-                user: {
-                    select: { id: true, name: true },
-                },
+                table: { select: { number: true } },
+                user: { select: { name: true } },
                 orderDetails: {
+                    orderBy: { id: 'asc' },
                     select: {
                         id: true,
                         quantity: true,
-                        unitPrice: true,
                         kitchenStatus: true,
                         kitchenNotes: true,
                         meal: { select: { name: true } },
@@ -47,7 +43,7 @@ export const GET = withAuth(async (_request, user) => {
 
         return successResponse({ orders });
     } catch (e) {
-        console.error('GET /api/orders/list:', e);
-        return errorResponse('Failed to fetch orders', 500);
+        console.error('GET /api/kitchen/orders:', e);
+        return errorResponse('Error al cargar cocina', 500);
     }
 });

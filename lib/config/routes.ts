@@ -45,6 +45,14 @@ export const TABLE_ROUTES = {
 } as const;
 
 /**
+ * Kitchen queue & line-item status
+ */
+export const KITCHEN_ROUTES = {
+    ORDERS: `${API_BASE}/kitchen/orders`,
+    UPDATE_ITEM: (orderDetailId: string) => `${API_BASE}/kitchen/items/${orderDetailId}`,
+} as const;
+
+/**
  * Order endpoints
  */
 export const ORDER_ROUTES = {
@@ -53,6 +61,7 @@ export const ORDER_ROUTES = {
     CREATE: `${API_BASE}/orders/create`,
     UPDATE: (id: string) => `${API_BASE}/orders/${id}`,
     UPDATE_STATUS: (id: string) => `${API_BASE}/orders/${id}/status`,
+    ADD_ITEMS: (id: string) => `${API_BASE}/orders/${id}/items`,
 } as const;
 
 /**
