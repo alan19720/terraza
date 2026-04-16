@@ -23,6 +23,7 @@ export const USER_ROUTES = {
     LIST: `${API_BASE}/users`,
     BY_ID: (id: string) => `${API_BASE}/users/${id}`,
     CREATE: `${API_BASE}/users/create`,
+    UPDATE: (id: string) => `${API_BASE}/users/${id}`,
 } as const;
 
 /**
@@ -34,6 +35,24 @@ export const PRODUCT_ROUTES = {
     CREATE: `${API_BASE}/products`,
     UPDATE: (id: string) => `${API_BASE}/products/${id}`,
     DELETE: (id: string) => `${API_BASE}/products/${id}`,
+} as const;
+
+/**
+ * Meal endpoints
+ */
+export const MEAL_ROUTES = {
+    LIST: `${API_BASE}/meals`,
+    CREATE: `${API_BASE}/meals`,
+    UPDATE: (id: string) => `${API_BASE}/meals/${id}`,
+} as const;
+
+/**
+ * Category endpoints
+ */
+export const CATEGORY_ROUTES = {
+    LIST: `${API_BASE}/categories`,
+    CREATE: `${API_BASE}/categories`,
+    UPDATE: (id: string) => `${API_BASE}/categories/${id}`,
 } as const;
 
 /**
@@ -62,6 +81,18 @@ export const ORDER_ROUTES = {
     UPDATE: (id: string) => `${API_BASE}/orders/${id}`,
     UPDATE_STATUS: (id: string) => `${API_BASE}/orders/${id}/status`,
     ADD_ITEMS: (id: string) => `${API_BASE}/orders/${id}/items`,
+} as const;
+
+/**
+ * Inventory endpoints
+ */
+export const INVENTORY_ROUTES = {
+    LIST: `${API_BASE}/inventory`,
+    CREATE: `${API_BASE}/inventory`,
+    UPDATE: (id: string) => `${API_BASE}/inventory/${id}`,
+    DELETE: (id: string) => `${API_BASE}/inventory/${id}`,
+    STOCK: `${API_BASE}/inventory/stock`,
+    MOVEMENTS: `${API_BASE}/inventory/stock`,
 } as const;
 
 /**

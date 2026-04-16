@@ -130,3 +130,36 @@ model Payment {
 
   order Order @relation(fields: [orderId], references: [id])
 }
+
+// ─── 5. Inventory ───────────────────────────────────────────────────
+
+enum MovementType {
+  IN
+  OUT
+  ADJUSTMENT
+}
+
+model InventoryProduct {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  unit         String   @default("piezas")
+  currentStock Int      @default(0)
+  minimumStock Int      @default(0)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt @default(now())
+
+  stockMovements StockMovement[]
+}
+
+model StockMovement {
+  id        String       @id @default(uuid())
+  productId String
+  type      MovementType
+  quantity  Int
+  notes     String?
+  createdAt DateTime     @default(now())
+
+  product InventoryProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+}

@@ -10,7 +10,9 @@ import {
     ChefHat,
     Wallet,
     Package,
+    BookOpen,
     BarChart3,
+    Users,
     Settings
 } from 'lucide-react';
 
@@ -20,7 +22,9 @@ const menuItems = [
     { icon: ChefHat, label: 'Cocina', href: '/dashboard/kitchen' },
     { icon: Wallet, label: 'Caja', href: '/dashboard/cashier' },
     { icon: Package, label: 'Inventario', href: '/dashboard/inventory' },
+    { icon: BookOpen, label: 'Menú', href: '/dashboard/menu' },
     { icon: BarChart3, label: 'Reportes', href: '/dashboard/reports' },
+    { icon: Users, label: 'Usuarios', href: '/dashboard/users' },
 ];
 
 type Props = {
@@ -60,8 +64,8 @@ export default function Sidebar({ mobileOpen, onMobileClose }: Props) {
                             href={item.href}
                             onClick={onMobileClose}
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${isActive
-                                    ? 'bg-primary text-white'
-                                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                                ? 'bg-primary text-white'
+                                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                                 }`}
                         >
                             <item.icon className={`w-[18px] h-[18px] ${isActive ? 'text-secondary' : 'text-gray-400 group-hover:text-gray-600'}`} />
