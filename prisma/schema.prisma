@@ -124,9 +124,10 @@ model Payment {
   id            String        @id @default(uuid())
   orderId       String
   paymentMethod PaymentMethod
-  amount        Decimal
-  tipAmount     Decimal       @default(0)
-  totalCharged  Decimal
+  amount          Decimal
+  discountPercent Decimal       @default(0)
+  tipAmount       Decimal       @default(0)
+  totalCharged    Decimal
 
   order Order @relation(fields: [orderId], references: [id])
 }

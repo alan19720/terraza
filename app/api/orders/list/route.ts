@@ -42,6 +42,17 @@ export const GET = withAuth(async (_request, user) => {
                         meal: { select: { name: true } },
                     },
                 },
+                payments: {
+                    select: {
+                        id: true,
+                        amount: true,
+                        discountPercent: true,
+                        tipAmount: true,
+                        totalCharged: true,
+                        paymentMethod: true,
+                    },
+                    take: 1,
+                },
             },
         });
 

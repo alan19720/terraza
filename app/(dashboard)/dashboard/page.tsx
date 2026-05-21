@@ -6,6 +6,8 @@ import NewOrderModal from '@/app/components/Dashboard/NewOrderModal';
 import OrderDetailModal from '@/app/components/Dashboard/OrderDetailModal';
 import AddItemsToOrderModal from '@/app/components/Dashboard/AddItemsToOrderModal';
 import TablesPanel from '@/app/components/Dashboard/TablesPanel';
+import ReceiptModal from '@/app/components/Dashboard/ReceiptModal';
+import type { CheckoutResult } from '@/app/components/Dashboard/CheckoutModal';
 import { ORDER_ROUTES } from '@/lib/config/routes';
 import { OrderStatus } from '@/app/generated/prisma/enums';
 import {
@@ -19,6 +21,7 @@ import {
     Clock,
     CircleCheck,
     CircleX,
+    Printer,
 } from 'lucide-react';
 
 type OrderRow = {
@@ -36,6 +39,14 @@ type OrderRow = {
         kitchenNotes: string | null;
         meal: { name: string };
     }[];
+    payments?: {
+        id: string;
+        amount: string;
+        discountPercent: string;
+        tipAmount: string;
+        totalCharged: string;
+        paymentMethod: string;
+    }[];
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: typeof Clock }> = {
@@ -52,6 +63,34 @@ export default function DashboardPage() {
     const [selectedOrder, setSelectedOrder] = useState<OrderRow | null>(null);
     const [addItemsForOrderId, setAddItemsForOrderId] = useState<string | null>(null);
     const [tablesRefreshKey, setTablesRefreshKey] = useState(0);
+    const [reprintReceiptResult, setReprintReceiptResult] = useState<CheckoutResult | null>(null);
+
+    const handleReprint = (e: React.MouseEvent, order: OrderRow) => {
+        e.stopPropagation();
+        if (!order.payments || order.payments.length === 0) return;
+        
+        const payment = order.payments[0];
+        setReprintReceiptResult({
+            payment: {
+                id: payment.id,
+                amount: Number(payment.amount),
+                discountPercent: Number(payment.discountPercent),
+                tipAmount: Number(payment.tipAmount),
+                totalCharged: Number(payment.totalCharged),
+            },
+            order: { id: order.id, status: order.status },
+            orderSnapshot: {
+                id: order.id,
+                table: { number: order.table.number },
+                orderDetails: order.orderDetails.map((d) => ({
+                    quantity: d.quantity,
+                    unitPrice: d.unitPrice,
+                    meal: { name: d.meal.name },
+                })),
+            },
+            paymentMethod: payment.paymentMethod,
+        });
+    };
 
     const isAdmin = user?.role?.name === 'ADMIN';
 
@@ -211,6 +250,7 @@ export default function DashboardPage() {
                                         <th className="text-left px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Estado</th>
                                         <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Total</th>
                                         <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Hora</th>
+                                        <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
@@ -246,6 +286,18 @@ export default function DashboardPage() {
                                                 </td>
                                                 <td className="px-5 py-3 text-right text-gray-400">
                                                     {formatTime(order.createdAt)}
+                                                </td>
+                                                <td className="px-5 py-3 text-right">
+                                                    {order.status === OrderStatus.CLOSED && order.payments && order.payments.length > 0 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => handleReprint(e, order)}
+                                                            title="Reimprimir Ticket"
+                                                            className="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors inline-flex"
+                                                        >
+                                                            <Printer className="w-4 h-4" />
+                                                        </button>
+                                                    )}
                                                 </td>
                                             </tr>
                                         );
@@ -294,6 +346,12 @@ export default function DashboardPage() {
                     setAddItemsForOrderId(null);
                     refreshOrdersKeepSelection();
                 }}
+            />
+
+            <ReceiptModal
+                open={!!reprintReceiptResult}
+                result={reprintReceiptResult}
+                onClose={() => setReprintReceiptResult(null)}
             />
         </>
     );

@@ -84,7 +84,7 @@ export default function AddItemsToOrderModal({ open, orderId, tableNumber, onClo
         setActiveDivision('comidas');
         setActiveCategory('');
         setLoading(true);
-        fetch('/api/categories', { credentials: 'include' })
+        fetch(`/api/categories?t=${Date.now()}`, { credentials: 'include', cache: 'no-store' })
             .then((r) => r.json())
             .then((cRes) => {
                 if (cRes.success) setCategories(cRes.data.categories);

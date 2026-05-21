@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { prisma } from '@/prisma/prisma';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
 
+export const dynamic = 'force-dynamic';
+
 const createCategorySchema = z.object({
     name: z.string().min(1, 'Name is required'),
 });

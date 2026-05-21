@@ -89,7 +89,7 @@ export default function NewOrderModal({ open, onClose, onSuccess }: Props) {
         setLoading(true);
         Promise.all([
             fetch('/api/tables', { credentials: 'include' }).then((r) => r.json()),
-            fetch('/api/categories', { credentials: 'include' }).then((r) => r.json()),
+            fetch(`/api/categories?t=${Date.now()}`, { credentials: 'include', cache: 'no-store' }).then((r) => r.json()),
         ])
             .then(([tRes, cRes]) => {
                 if (tRes.success) setTables(tRes.data.tables);
