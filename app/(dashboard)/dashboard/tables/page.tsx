@@ -45,7 +45,7 @@ export default function TablesPage() {
 
     useEffect(() => { fetchTables(); }, [fetchTables]);
 
-    const filtered = tables.filter(t => t.number.toLowerCase().includes(searchQuery.toLowerCase()));
+    const filtered = tables.filter((t: any) => t.number.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const openCreate = () => {
         setEditingTable(null);

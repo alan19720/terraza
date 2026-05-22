@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2, RefreshCw, CircleDot, Settings2, Check, Waves } from 'lucide-react';
-import { TableStatus, KitchenStatus } from '@/app/generated/prisma/enums';
+import { TableStatus, KitchenStatus } from '@prisma/client';
 
 type Table = {
     id: string;

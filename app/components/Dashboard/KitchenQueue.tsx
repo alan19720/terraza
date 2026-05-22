@@ -13,7 +13,7 @@ import {
     GlassWater,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { KitchenStatus } from '@/app/generated/prisma/enums';
+import { KitchenStatus } from '@prisma/client';
 import { KITCHEN_ROUTES } from '@/lib/config/routes';
 
 type KitchenLine = {

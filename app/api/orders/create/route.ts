@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { prisma } from '@/prisma/prisma';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
 import { withAuth } from '@/lib/utils/with-auth';
-import { OrderStatus, TableStatus } from '@/app/generated/prisma/enums';
+import { OrderStatus, TableStatus } from '@prisma/client';
 
 const createOrderSchema = z.object({
     tableId: z.string().uuid('Invalid table ID'),

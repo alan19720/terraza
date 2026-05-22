@@ -53,7 +53,7 @@ export const GET = withAuth(async () => {
             if (p.paymentMethod === 'TRANSFER') totalTransferencia += charged;
         }
 
-        const ordersCount = new Set(payments.map(p => p.orderId)).size;
+        const ordersCount = new Set(payments.map((p: any) => p.orderId)).size;
 
         return successResponse({
             summary: {
@@ -65,7 +65,7 @@ export const GET = withAuth(async () => {
                 totalTransferencia,
                 ordersCount,
             },
-            payments: payments.map(p => ({
+            payments: payments.map((p: any) => ({
                 id: p.id,
                 amount: Number(p.amount),
                 tipAmount: Number(p.tipAmount),
@@ -75,7 +75,7 @@ export const GET = withAuth(async () => {
                     tableNumber: p.order.table.number,
                     waiterName: p.order.user.name,
                     createdAt: p.order.createdAt,
-                    summary: p.order.orderDetails.map(d => `${d.quantity}× ${d.meal.name}`).join(', '),
+                    summary: p.order.orderDetails.map((d: any) => `${d.quantity}× ${d.meal.name}`).join(', '),
                 }
             }))
         });

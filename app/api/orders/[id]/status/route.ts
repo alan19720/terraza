@@ -1,9 +1,10 @@
+import type { Prisma } from '@prisma/client';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/prisma/prisma';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
 import { withAuth } from '@/lib/utils/with-auth';
-import { OrderStatus, TableStatus } from '@/app/generated/prisma/enums';
+import { OrderStatus, TableStatus } from '@prisma/client';
 
 const ADMIN_ROLE = 'ADMIN';
 
@@ -52,7 +53,7 @@ export const PATCH = withAuth(async (request: NextRequest, user) => {
             return errorResponse('No autorizado', 403);
         }
 
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             await tx.order.update({
                 where: { id: orderId },
                 data: { status },

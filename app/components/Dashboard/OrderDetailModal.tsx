@@ -14,7 +14,7 @@ import {
     Loader2,
     Receipt,
 } from 'lucide-react';
-import { OrderStatus, KitchenStatus } from '@/app/generated/prisma/enums';
+import { OrderStatus, KitchenStatus } from '@prisma/client';
 import { ORDER_ROUTES } from '@/lib/config/routes';
 import CheckoutModal, { type CheckoutResult } from './CheckoutModal';
 import ReceiptModal from './ReceiptModal';

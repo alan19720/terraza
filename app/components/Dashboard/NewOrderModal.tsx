@@ -6,7 +6,7 @@ import {
     X, Plus, Minus, Loader2, ShoppingCart,
     UtensilsCrossed,
 } from 'lucide-react';
-import { TableStatus } from '@/app/generated/prisma/enums';
+import { TableStatus } from '@prisma/client';
 import { ORDER_ROUTES } from '@/lib/config/routes';
 
 type Table = { id: string; number: string; status: string };
@@ -90,8 +90,8 @@ export default function NewOrderModal({ open, onClose, onSuccess }: Props) {
         );
     };
 
-    const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
-    const itemCount = cart.reduce((s, i) => s + i.quantity, 0);
+    const total = cart.reduce((s: number, i: any) => s + i.price * i.quantity, 0);
+    const itemCount = cart.reduce((s: number, i: any) => s + i.quantity, 0);
 
     const handleSubmit = async () => {
         if (!tableId || cart.length === 0) return;

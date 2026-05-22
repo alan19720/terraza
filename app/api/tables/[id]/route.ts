@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/prisma/prisma';
 import { withAuth } from '@/lib/utils/with-auth';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
-import { TableStatus } from '@/app/generated/prisma/enums';
+import { TableStatus } from '@prisma/client';
 import { z } from 'zod';
 
 const VALID_STATUSES = Object.values(TableStatus);

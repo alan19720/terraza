@@ -3,7 +3,7 @@ import { prisma } from '@/prisma/prisma';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
 import { withAuth } from '@/lib/utils/with-auth';
 import { startOfToday } from '@/lib/utils/date';
-import { KitchenStatus, OrderStatus } from '@/app/generated/prisma/enums';
+import { KitchenStatus, OrderStatus } from '@prisma/client';
 
 export const GET = withAuth(async (request: NextRequest) => {
     try {

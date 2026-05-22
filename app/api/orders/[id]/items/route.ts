@@ -1,9 +1,10 @@
+import type { Prisma } from '@prisma/client';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/prisma/prisma';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
 import { withAuth } from '@/lib/utils/with-auth';
-import { OrderStatus } from '@/app/generated/prisma/enums';
+import { OrderStatus } from '@prisma/client';
 
 const ADMIN_ROLE = 'ADMIN';
 
@@ -69,7 +70,7 @@ export const POST = withAuth(async (request: NextRequest, user) => {
             where: { id: { in: mealIds }, isAvailable: true },
             select: { id: true, price: true },
         });
-        const mealMap = new Map(meals.map((m) => [m.id, m]));
+        const mealMap = new Map<string, { id: string; price: number }>(meals.map((m: any) => [m.id, m]));
         for (const item of items) {
             if (!mealMap.has(item.mealId)) {
                 return errorResponse('Platillo no disponible', 400);
@@ -84,7 +85,7 @@ export const POST = withAuth(async (request: NextRequest, user) => {
             kitchenNotes: item.kitchenNotes || null,
         }));
 
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             await tx.orderDetail.createMany({ data: rows });
             const allDetails = await tx.orderDetail.findMany({
                 where: { orderId },
@@ -97,7 +98,7 @@ export const POST = withAuth(async (request: NextRequest, user) => {
                 },
             });
             const total = allDetails.reduce(
-                (s, d) => s + Number(d.unitPrice) * d.quantity,
+                (s: number, d: any) => s + Number(d.unitPrice) * d.quantity,
                 0
             );
             await tx.order.update({

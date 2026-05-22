@@ -76,8 +76,8 @@ export default function AddItemsToOrderModal({ open, orderId, tableNumber, onClo
         );
     };
 
-    const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
-    const itemCount = cart.reduce((s, i) => s + i.quantity, 0);
+    const total = cart.reduce((s: number, i: any) => s + i.price * i.quantity, 0);
+    const itemCount = cart.reduce((s: number, i: any) => s + i.quantity, 0);
 
     const handleSubmit = async () => {
         if (!orderId || cart.length === 0) return;

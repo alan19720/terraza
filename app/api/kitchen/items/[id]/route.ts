@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/prisma/prisma';
 import { withAuth } from '@/lib/utils/with-auth';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
-import { KitchenStatus, OrderStatus } from '@/app/generated/prisma/enums';
+import { KitchenStatus, OrderStatus } from '@prisma/client';
 
 const VALID = Object.values(KitchenStatus);
 

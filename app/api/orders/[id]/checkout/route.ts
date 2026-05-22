@@ -1,9 +1,10 @@
+import type { Prisma } from '@prisma/client';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/prisma/prisma';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
 import { withAuth } from '@/lib/utils/with-auth';
-import { OrderStatus, TableStatus } from '@/app/generated/prisma/enums';
+import { OrderStatus, TableStatus } from '@prisma/client';
 
 const ADMIN_ROLE = 'ADMIN';
 
@@ -58,7 +59,7 @@ export const POST = withAuth(async (request: NextRequest, user) => {
 
         // Compute the total from order details (source of truth)
         const grossTotal = order.orderDetails.reduce(
-            (sum, d) => sum + Number(d.unitPrice) * d.quantity,
+            (sum: number, d: any) => sum + Number(d.unitPrice) * d.quantity,
             0
         );
         const discountAmount = grossTotal * (discountPercent / 100);
@@ -67,7 +68,7 @@ export const POST = withAuth(async (request: NextRequest, user) => {
         const amount = netFoodTotal;
         const totalCharged = parseFloat((amount + tipAmount).toFixed(2));
 
-        const payment = await prisma.$transaction(async (tx) => {
+        const payment = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             const pay = await tx.payment.create({
                 data: {
                     orderId,

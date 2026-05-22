@@ -9,7 +9,7 @@ import TablesPanel from '@/app/components/Dashboard/TablesPanel';
 import ReceiptModal from '@/app/components/Dashboard/ReceiptModal';
 import type { CheckoutResult } from '@/app/components/Dashboard/CheckoutModal';
 import { ORDER_ROUTES } from '@/lib/config/routes';
-import { OrderStatus } from '@/app/generated/prisma/enums';
+import { OrderStatus } from '@prisma/client';
 import {
     PlusCircle,
     Utensils,
@@ -171,7 +171,7 @@ export default function DashboardPage() {
     const openOrders = orders.filter((o) => o.status === OrderStatus.OPEN);
 
     const stats = [
-        { label: 'Ventas Hoy', value: `$${orders.reduce((s, o) => s + Number(o.total), 0).toLocaleString()}`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+        { label: 'Ventas Hoy', value: `$${orders.reduce((s: number, o: any) => s + Number(o.total), 0).toLocaleString()}`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
         { label: 'Órdenes Activas', value: String(openOrders.length), icon: Utensils, color: 'text-blue-600', bg: 'bg-blue-50' },
         { label: 'Total Órdenes', value: String(orders.length), icon: Users, color: 'text-violet-600', bg: 'bg-violet-50' },
         { label: 'Canceladas', value: String(orders.filter((o) => o.status === OrderStatus.CANCELED).length), icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-50' },

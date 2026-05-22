@@ -64,13 +64,13 @@ export default function RecipesPage() {
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
-    const filtered = recipes.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()) || r.dishType.toLowerCase().includes(searchQuery.toLowerCase()));
+    const filtered = recipes.filter((r: any) => r.name.toLowerCase().includes(searchQuery.toLowerCase()) || r.dishType.toLowerCase().includes(searchQuery.toLowerCase()));
 
     // Helpers
     const getNetPrice = (item: InventoryProductRow) => (parseFloat(item.unitPrice) || 0) / ((item.yieldPercent || 100) / 100);
 
     const calculateRecipeCost = (recipeIngredients: any[]) => {
-        return recipeIngredients.reduce((total, ri) => {
+        return recipeIngredients.reduce((total: number, ri: any) => {
             let netPrice = 0;
             // If checking from form state vs fetched state
             if (ri.ingredient) {
@@ -161,7 +161,7 @@ export default function RecipesPage() {
                 portionSize: parseFloat(form.portionSize) || 0,
                 portionsYield: parseInt(form.portionsYield) || 1,
                 sellingPrice: parseFloat(form.sellingPrice) || 0,
-                ingredients: ingredientsForm.map(i => ({
+                ingredients: ingredientsForm.map((i: any) => ({
                     ingredientId: i.ingredientId,
                     quantityUsed: parseFloat(i.quantityUsed)
                 }))

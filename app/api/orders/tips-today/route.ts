@@ -2,7 +2,7 @@ import { prisma } from '@/prisma/prisma';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
 import { withAuth } from '@/lib/utils/with-auth';
 import { startOfToday } from '@/lib/utils/date';
-import { OrderStatus } from '@/app/generated/prisma/enums';
+import { OrderStatus } from '@prisma/client';
 
 /**
  * GET /api/orders/tips-today
