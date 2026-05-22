@@ -54,6 +54,13 @@ export const PATCH = withAuth(async (request: NextRequest, user) => {
         }
 
         await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            // If cancelling, delete any existing payment records for this order
+            if (status === OrderStatus.CANCELED) {
+                await tx.payment.deleteMany({
+                    where: { orderId },
+                });
+            }
+
             await tx.order.update({
                 where: { id: orderId },
                 data: { status },

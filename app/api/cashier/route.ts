@@ -2,6 +2,7 @@ import { prisma } from '@/prisma/prisma';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
 import { withAuth } from '@/lib/utils/with-auth';
 import { startOfToday } from '@/lib/utils/date';
+import { OrderStatus } from '@prisma/client';
 
 export const GET = withAuth(async () => {
     try {
@@ -10,6 +11,7 @@ export const GET = withAuth(async () => {
         const payments = await prisma.payment.findMany({
             where: {
                 order: {
+                    status: OrderStatus.CLOSED,
                     createdAt: { gte: startOfDay },
                 },
             },
