@@ -349,8 +349,8 @@ export default function KitchenQueue({ viewType = 'kitchen' }: { viewType?: 'kit
                                                                             {line.meal.name}
                                                                         </p>
                                                                         {line.kitchenNotes && (
-                                                                            <p className="mt-1 flex items-start gap-1.5 rounded-lg bg-amber-50 px-2 py-1 text-[11px] text-amber-900">
-                                                                                <MessageSquare className="w-3 h-3 shrink-0 mt-0.5" />
+                                                                            <p className="mt-0.5 flex items-start gap-1.5 text-sm font-semibold italic text-orange-600">
+                                                                                <MessageSquare className="w-4 h-4 shrink-0 mt-0.5" />
                                                                                 {line.kitchenNotes}
                                                                             </p>
                                                                         )}

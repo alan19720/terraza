@@ -10,7 +10,7 @@ import { ORDER_ROUTES } from '@/lib/config/routes';
 
 type Meal = { id: string; name: string; description: string | null; price: number };
 type Category = { id: string; name: string; meals: Meal[] };
-type CartItem = { mealId: string; name: string; price: number; quantity: number };
+type CartItem = { mealId: string; name: string; price: number; quantity: number; kitchenNotes?: string };
 
 type Props = {
     open: boolean;
@@ -68,6 +68,14 @@ export default function AddItemsToOrderModal({ open, orderId, tableNumber, onClo
         });
     };
 
+    const updateNote = (mealId: string, note: string) => {
+        setCart((prev) =>
+            prev.map((item) =>
+                item.mealId === mealId ? { ...item, kitchenNotes: note } : item
+            )
+        );
+    };
+
     const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
     const itemCount = cart.reduce((s, i) => s + i.quantity, 0);
 
@@ -80,7 +88,7 @@ export default function AddItemsToOrderModal({ open, orderId, tableNumber, onClo
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 body: JSON.stringify({
-                    items: cart.map((i) => ({ mealId: i.mealId, quantity: i.quantity })),
+                    items: cart.map((i) => ({ mealId: i.mealId, quantity: i.quantity, kitchenNotes: i.kitchenNotes })),
                 }),
             });
             const data = await res.json();
@@ -234,32 +242,41 @@ export default function AddItemsToOrderModal({ open, orderId, tableNumber, onClo
                                     cart.map((item) => (
                                         <div
                                             key={item.mealId}
-                                            className="flex items-center gap-2 p-2 rounded-lg bg-white border border-gray-100"
+                                            className="flex flex-col p-2 rounded-lg bg-white border border-gray-100"
                                         >
-                                            <div className="min-w-0 flex-1">
-                                                <p className="text-[13px] font-medium text-gray-800 truncate">{item.name}</p>
-                                                <p className="text-xs text-gray-400">${item.price.toFixed(0)} c/u</p>
+                                            <div className="flex items-center gap-2">
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-[13px] font-medium text-gray-800 truncate">{item.name}</p>
+                                                    <p className="text-xs text-gray-400">${item.price.toFixed(0)} c/u</p>
+                                                </div>
+                                                <div className="flex items-center gap-0.5 shrink-0">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => updateQty(item.mealId, -1)}
+                                                        className="p-1 rounded-md hover:bg-red-50 hover:text-red-500 text-gray-400 cursor-pointer transition-colors"
+                                                    >
+                                                        <Minus className="w-3.5 h-3.5" />
+                                                    </button>
+                                                    <span className="text-sm font-semibold w-5 text-center text-gray-700">{item.quantity}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => updateQty(item.mealId, 1)}
+                                                        className="p-1 rounded-md hover:bg-emerald-50 hover:text-emerald-500 text-gray-400 cursor-pointer transition-colors"
+                                                    >
+                                                        <Plus className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+                                                <span className="text-sm font-semibold text-gray-700 w-14 text-right">
+                                                    ${(item.price * item.quantity).toFixed(0)}
+                                                </span>
                                             </div>
-                                            <div className="flex items-center gap-0.5 shrink-0">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => updateQty(item.mealId, -1)}
-                                                    className="p-1 rounded-md hover:bg-red-50 hover:text-red-500 text-gray-400 cursor-pointer transition-colors"
-                                                >
-                                                    <Minus className="w-3.5 h-3.5" />
-                                                </button>
-                                                <span className="text-sm font-semibold w-5 text-center text-gray-700">{item.quantity}</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => updateQty(item.mealId, 1)}
-                                                    className="p-1 rounded-md hover:bg-emerald-50 hover:text-emerald-500 text-gray-400 cursor-pointer transition-colors"
-                                                >
-                                                    <Plus className="w-3.5 h-3.5" />
-                                                </button>
-                                            </div>
-                                            <span className="text-sm font-semibold text-gray-700 w-14 text-right">
-                                                ${(item.price * item.quantity).toFixed(0)}
-                                            </span>
+                                            <input
+                                                type="text"
+                                                placeholder="Notas (ej. Sin cebolla)"
+                                                value={item.kitchenNotes || ''}
+                                                onChange={(e) => updateNote(item.mealId, e.target.value)}
+                                                className="mt-1.5 text-[11px] border border-gray-200 rounded px-2 py-1.5 w-full bg-gray-50 focus:bg-white focus:outline-none focus:border-primary/50 text-gray-600 placeholder:text-gray-400"
+                                            />
                                         </div>
                                     ))
                                 )}

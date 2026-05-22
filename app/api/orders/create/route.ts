@@ -10,6 +10,7 @@ const createOrderSchema = z.object({
         z.object({
             mealId: z.string().uuid('Invalid meal ID'),
             quantity: z.number().int().min(1, 'Quantity must be at least 1'),
+            kitchenNotes: z.string().optional(),
         })
     ).min(1, 'Add at least one item'),
 });
@@ -55,6 +56,7 @@ export const POST = withAuth(async (request, user) => {
                 mealId: item.mealId,
                 quantity: item.quantity,
                 unitPrice: meal.price,
+                kitchenNotes: item.kitchenNotes || null,
             };
         });
 

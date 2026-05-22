@@ -13,6 +13,7 @@ const bodySchema = z.object({
             z.object({
                 mealId: z.string().uuid(),
                 quantity: z.number().int().min(1),
+                kitchenNotes: z.string().optional(),
             })
         )
         .min(1, 'Agrega al menos un platillo'),
@@ -80,6 +81,7 @@ export const POST = withAuth(async (request: NextRequest, user) => {
             mealId: item.mealId,
             quantity: item.quantity,
             unitPrice: mealMap.get(item.mealId)!.price,
+            kitchenNotes: item.kitchenNotes || null,
         }));
 
         await prisma.$transaction(async (tx) => {
