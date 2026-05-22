@@ -1,85 +1,173 @@
 import { prisma } from '../prisma';
 
 const MEALS: { categoryName: string; name: string; description: string | null; price: number }[] = [
-    // Entradas
-    { categoryName: 'Entradas', name: 'Empanadas de camarón', description: 'Tres deliciosas empanadas fritas rellenas de camarón guisado con queso', price: 120 },
-    { categoryName: 'Entradas', name: 'Tostada de ceviche de pescado', description: 'Tostada crujiente con ceviche de pescado fresco, aguacate y salsa de la casa', price: 65 },
-    { categoryName: 'Entradas', name: 'Dedos de queso', description: 'Bastones de queso empanizados acompañados de salsa pomodoro (6 piezas)', price: 95 },
-    
-    // Fuertes
-    { categoryName: 'Fuertes', name: 'Mariscada especial', description: 'Gran mariscada al gusto con camarón, pulpo, calamar, almeja y filete de pescado', price: 380 },
-    { categoryName: 'Fuertes', name: 'Pulpo zarandeado', description: 'Pulpo entero zarandeado a las brasas con adobo secreto de la casa', price: 320 },
-    { categoryName: 'Fuertes', name: 'Corte de Arrachera', description: '300g de jugosa arrachera a la parrilla con papas y cebollitas', price: 290 },
 
-    // Ceviches y Cocteles
-    { categoryName: 'Ceviches y Cocteles', name: 'Ceviche de pescado', description: 'Pescado fresco marinado en limón con cebolla morada, cilantro y aguacate', price: 185 },
-    { categoryName: 'Ceviches y Cocteles', name: 'Ceviche de camarón', description: 'Camarones cocidos en limón con pepino, jícama y salsa bandera', price: 195 },
-    { categoryName: 'Ceviches y Cocteles', name: 'Ceviche mixto', description: 'Mezcla de pescado, camarón y pulpo en limón con aguacate', price: 220 },
-    { categoryName: 'Ceviches y Cocteles', name: 'Coctel de camarón', description: 'Camarones en salsa cóctel con aguacate y galleta salada', price: 175 },
-    { categoryName: 'Ceviches y Cocteles', name: 'Coctel de pulpo', description: 'Pulpo en salsa cóctel con cebolla y cilantro', price: 195 },
-    { categoryName: 'Ceviches y Cocteles', name: 'Aguachile verde', description: 'Camarón crudo marinado en limón con chile serrano y pepino', price: 210 },
-    
-    // Pescados
-    { categoryName: 'Pescados', name: 'Filete de pescado a la plancha', description: 'Filete de pescado blanco con mantequilla de ajo y verduras', price: 245 },
-    { categoryName: 'Pescados', name: 'Pescado zarandeado', description: 'Pescado entero zarandeado al carbón con mantequilla y especias', price: 320 },
-    { categoryName: 'Pescados', name: 'Huachinango a la talla', description: 'Huachinango entero a la parrilla con adobo rojo o verde', price: 380 },
-    { categoryName: 'Pescados', name: 'Mojarra frita', description: 'Mojarra entera frita crujiente con ajo y limón', price: 195 },
-    { categoryName: 'Pescados', name: 'Filete empanizado', description: 'Filete de pescado empanizado con papas a la francesa y ensalada', price: 215 },
-    { categoryName: 'Pescados', name: 'Pescado al mojo de ajo', description: 'Filete de pescado con mantequilla, ajo y perejil', price: 235 },
-    
-    // Camarones
-    { categoryName: 'Camarones', name: 'Camarones al ajillo', description: 'Camarones salteados en mantequilla con ajo y vino blanco', price: 265 },
-    { categoryName: 'Camarones', name: 'Camarones a la diabla', description: 'Camarones en salsa de chile guajillo y chipotle', price: 255 },
-    { categoryName: 'Camarones', name: 'Camarones empanizados', description: 'Camarones empanizados con papas fritas y salsa', price: 235 },
-    { categoryName: 'Camarones', name: 'Camarones a la plancha', description: 'Camarones grandes a la plancha con mantequilla y limón', price: 275 },
-    { categoryName: 'Camarones', name: 'Arroz con camarones', description: 'Arroz blanco con camarones al ajillo y verduras', price: 195 },
-    { categoryName: 'Camarones', name: 'Camarones al coco', description: 'Camarones empanizados en coco con salsa agridulce', price: 265 },
-    
-    // Mariscos
-    { categoryName: 'Mariscos', name: 'Ostiones naturales', description: 'Ostiones frescos en concha con limón y salsa', price: 185 },
-    { categoryName: 'Mariscos', name: 'Almejas a la marinera', description: 'Almejas en salsa de jitomate con ajo y vino', price: 195 },
-    { categoryName: 'Mariscos', name: 'Pulpo a la gallega', description: 'Pulpo cocido con papas, aceite de oliva y pimentón', price: 245 },
-    { categoryName: 'Mariscos', name: 'Cóctel de ostiones', description: 'Ostiones en salsa cóctel con limón y aguacate', price: 175 },
-    { categoryName: 'Mariscos', name: 'Calamar frito', description: 'Aros de calamar empanizados con salsa marinera', price: 215 },
-    { categoryName: 'Mariscos', name: 'Mariscada', description: 'Mezcla de camarón, pulpo, calamar y pescado en salsa al gusto', price: 350 },
-    
-    // Sopas y Caldos
-    { categoryName: 'Sopas y Caldos', name: 'Sopa de mariscos', description: 'Caldo de pescado con camarón, pulpo, calamar y verduras', price: 165 },
-    { categoryName: 'Sopas y Caldos', name: 'Caldo de pescado', description: 'Caldo tradicional con pescado, verduras y limón', price: 125 },
-    { categoryName: 'Sopas y Caldos', name: 'Sopa de camarón', description: 'Sopa de camarón con chipotle y verduras', price: 145 },
-    { categoryName: 'Sopas y Caldos', name: 'Sopa de ostiones', description: 'Caldo con ostiones, cilantro y chile verde', price: 155 },
-    { categoryName: 'Sopas y Caldos', name: 'Caldo siete mares', description: 'Caldo con variedad de mariscos y pescado', price: 185 },
-    
-    // Botanas
-    { categoryName: 'Botanas', name: 'Tostadas de ceviche', description: 'Tres tostadas con ceviche de pescado o camarón', price: 95 },
-    { categoryName: 'Botanas', name: 'Tacos de pescado', description: 'Tres tacos de pescado empanizado con repollo y salsa', price: 105 },
-    { categoryName: 'Botanas', name: 'Tacos de camarón', description: 'Tres tacos de camarón con mayonesa y salsa', price: 115 },
-    { categoryName: 'Botanas', name: 'Queso fundido con camarón', description: 'Queso fundido con camarones y tortillas', price: 165 },
-    { categoryName: 'Botanas', name: 'Orden de papas fritas', description: 'Papas a la francesa con salsa', price: 65 },
-    { categoryName: 'Botanas', name: 'Guacamole con totopos', description: 'Guacamole fresco con tortilla frita', price: 85 },
-    
-    // Bebidas
-    { categoryName: 'Bebidas', name: 'Agua de horchata', description: 'Agua de horchata natural', price: 35 },
-    { categoryName: 'Bebidas', name: 'Agua de jamaica', description: 'Agua de flor de jamaica', price: 35 },
-    { categoryName: 'Bebidas', name: 'Refresco', description: 'Coca-Cola, Sprite o refresco del día', price: 40 },
-    { categoryName: 'Bebidas', name: 'Cerveza nacional', description: 'Corona, Modelo o Victoria', price: 55 },
-    { categoryName: 'Bebidas', name: 'Cerveza importada', description: 'Heineken, Stella Artois o similar', price: 75 },
-    { categoryName: 'Bebidas', name: 'Michelada', description: 'Cerveza con limón, salsa y clamato', price: 85 },
-    { categoryName: 'Bebidas', name: 'Limonada', description: 'Limonada natural con o sin gas', price: 45 },
-    { categoryName: 'Bebidas', name: 'Café', description: 'Café americano o de olla', price: 40 },
-    
-    // Postres
-    { categoryName: 'Postres', name: 'Flan napolitano', description: 'Flan tradicional con caramelo', price: 65 },
-    { categoryName: 'Postres', name: 'Pay de limón', description: 'Pay de limón con merengue', price: 75 },
-    { categoryName: 'Postres', name: 'Helado', description: 'Helado de vainilla, fresa o chocolate', price: 55 },
-    { categoryName: 'Postres', name: 'Crepas con cajeta', description: 'Crepas con cajeta y nuez', price: 85 },
+    // ═══════════════════════════════════════════════════════════════
+    // PLATO FUERTE
+    // ═══════════════════════════════════════════════════════════════
+
+    // Pulpo
+    { categoryName: 'Plato Fuerte', name: 'Pulpo al Pastor', description: null, price: 260 },
+    { categoryName: 'Plato Fuerte', name: 'Pulpo Adobado', description: null, price: 260 },
+    { categoryName: 'Plato Fuerte', name: 'Pulpo Enamorado', description: null, price: 210 },
+
+    // Camarones — salsas / estilos
+    { categoryName: 'Plato Fuerte', name: 'Camarones al Coco', description: null, price: 220 },
+    { categoryName: 'Plato Fuerte', name: 'Camarones Momia', description: null, price: 220 },
+    { categoryName: 'Plato Fuerte', name: 'Camarones Empanizados', description: null, price: 190 },
+    { categoryName: 'Plato Fuerte', name: 'Camarones Mango Habanero', description: null, price: 210 },
+    { categoryName: 'Plato Fuerte', name: 'Camarones a la Diabla', description: null, price: 210 },
+    { categoryName: 'Plato Fuerte', name: 'Camarones Sinaloa', description: null, price: 210 },
+    { categoryName: 'Plato Fuerte', name: 'Camarones al Ajillo', description: null, price: 210 },
+    { categoryName: 'Plato Fuerte', name: 'Camarones a la Mantequilla', description: null, price: 210 },
+    { categoryName: 'Plato Fuerte', name: 'Camarones Zarandeados', description: null, price: 210 },
+    { categoryName: 'Plato Fuerte', name: 'Camarones al Sartén', description: null, price: 160 },
+    { categoryName: 'Plato Fuerte', name: 'Camarones al Carbón', description: null, price: 160 },
+
+    // Filete de Pescado — salsas / estilos
+    { categoryName: 'Plato Fuerte', name: 'Filete de Pescado al Coco', description: null, price: 220 },
+    { categoryName: 'Plato Fuerte', name: 'Filete de Pescado Momia', description: null, price: 220 },
+    { categoryName: 'Plato Fuerte', name: 'Filete de Pescado Empanizado', description: null, price: 190 },
+    { categoryName: 'Plato Fuerte', name: 'Filete de Pescado Mango Habanero', description: null, price: 210 },
+    { categoryName: 'Plato Fuerte', name: 'Filete de Pescado a la Diabla', description: null, price: 210 },
+    { categoryName: 'Plato Fuerte', name: 'Filete de Pescado Sinaloa', description: null, price: 210 },
+    { categoryName: 'Plato Fuerte', name: 'Filete de Pescado al Ajillo', description: null, price: 210 },
+    { categoryName: 'Plato Fuerte', name: 'Filete de Pescado a la Mantequilla', description: null, price: 210 },
+    { categoryName: 'Plato Fuerte', name: 'Filete de Pescado Zarandeado', description: null, price: 210 },
+    { categoryName: 'Plato Fuerte', name: 'Filete de Pescado al Sartén', description: null, price: 160 },
+    { categoryName: 'Plato Fuerte', name: 'Filete de Pescado al Carbón', description: null, price: 160 },
+
+    // Especialidades
+    { categoryName: 'Plato Fuerte', name: 'Tartar de Atún', description: null, price: 230 },
+    { categoryName: 'Plato Fuerte', name: 'Tiritas de Pescado', description: null, price: 120 },
+
+    // Cóctel — tamaños (Camarón o Mixto)
+    { categoryName: 'Plato Fuerte', name: 'Cóctel Chico', description: 'Camarón o Mixto', price: 160 },
+    { categoryName: 'Plato Fuerte', name: 'Cóctel Mediano', description: 'Camarón o Mixto', price: 210 },
+    { categoryName: 'Plato Fuerte', name: 'Cóctel Grande', description: 'Camarón o Mixto', price: 255 },
+
+    // Postre & Pescado a la talla
+    { categoryName: 'Plato Fuerte', name: 'Postre de la Casa', description: null, price: 75 },
+    { categoryName: 'Plato Fuerte', name: 'Pescado a la Talla', description: 'Precio según el peso. Disponible: Zarandeado, Sinaloa, Frito', price: 0 },
+
+    // ═══════════════════════════════════════════════════════════════
+    // PARA EMPEZAR (Botana / Entradas)
+    // ═══════════════════════════════════════════════════════════════
+
+    // Tostadas
+    { categoryName: 'Para Empezar', name: 'Tostada Pulpo Enamorado', description: null, price: 70 },
+    { categoryName: 'Para Empezar', name: 'Tostada Aguachile Mango', description: null, price: 60 },
+    { categoryName: 'Para Empezar', name: 'Tostada Aguachile Verde', description: null, price: 60 },
+    { categoryName: 'Para Empezar', name: 'Tostada Aguachile Negro', description: null, price: 60 },
+    { categoryName: 'Para Empezar', name: 'Tostada Aguachile Chiltepín', description: null, price: 60 },
+    { categoryName: 'Para Empezar', name: 'Tostada Tiritas de Pescado', description: null, price: 60 },
+    { categoryName: 'Para Empezar', name: 'Tostada Zihua', description: null, price: 60 },
+    { categoryName: 'Para Empezar', name: 'Tostada Tártara', description: null, price: 60 },
+    { categoryName: 'Para Empezar', name: 'Tostada Ceviche de Camarón', description: null, price: 60 },
+
+    // Nachos, Empanadas, Caldos, Sopa
+    { categoryName: 'Para Empezar', name: 'Nachos Camarón', description: null, price: 120 },
+    { categoryName: 'Para Empezar', name: 'Empanada de Camarón con Queso', description: null, price: 145 },
+    { categoryName: 'Para Empezar', name: 'Empanada de Pescado con Queso', description: null, price: 145 },
+    { categoryName: 'Para Empezar', name: 'Caldo de Camarón', description: null, price: 205 },
+    { categoryName: 'Para Empezar', name: 'Caldo de Pescado', description: null, price: 205 },
+    { categoryName: 'Para Empezar', name: 'Sopa de Tortilla de Mar', description: null, price: 95 },
+
+    // Tacos (3 piezas)
+    { categoryName: 'Para Empezar', name: 'Taco Gobernador', description: '3 piezas', price: 160 },
+    { categoryName: 'Para Empezar', name: 'Pescadilla', description: '3 piezas', price: 95 },
+    { categoryName: 'Para Empezar', name: 'Camaronilla', description: '3 piezas', price: 95 },
+    { categoryName: 'Para Empezar', name: 'Taco Baja', description: '3 piezas', price: 160 },
+
+    // Sashimi, Carpacho, Guacamole
+    { categoryName: 'Para Empezar', name: 'Sashimi de Atún', description: 'Atún, salsa de soya, wasabi, jengibre encurtido, rábano daikon rallado o en tiras, ajonjolí, cebolla morada, limón', price: 220 },
+    { categoryName: 'Para Empezar', name: 'Carpacho de Atún', description: 'Aceite de oliva, limón, alcaparras, queso parmesano en láminas, arúgula o mezcla de hojas verdes, cebolla morada, perejil, aguacate', price: 260 },
+    { categoryName: 'Para Empezar', name: 'Guacamole', description: null, price: 65 },
+
+    // ═══════════════════════════════════════════════════════════════
+    // MENU GRILL
+    // ═══════════════════════════════════════════════════════════════
+
+    { categoryName: 'Menu Grill', name: 'Boneless', description: '150 gramos de Boneless, 200 gramos de papa, 4 bastones zanahoria, 4 bastones apio', price: 85 },
+    { categoryName: 'Menu Grill', name: 'Pizza Queso', description: '8 rebanadas, 35 cm de diámetro', price: 195 },
+    { categoryName: 'Menu Grill', name: 'Pizza Pepperoni', description: '8 rebanadas, 35 cm de diámetro', price: 195 },
+    { categoryName: 'Menu Grill', name: 'Pizza Hawaiana', description: '8 rebanadas, 35 cm de diámetro', price: 195 },
+    { categoryName: 'Menu Grill', name: 'Pizza Boneless', description: '8 rebanadas, 35 cm de diámetro, 400 gramos papas, 400 gramos Boneless', price: 245 },
+    { categoryName: 'Menu Grill', name: 'Papas a la Francesa', description: '400 gramos, sazonadas con sal, limón y pimienta', price: 75 },
+    { categoryName: 'Menu Grill', name: 'Papas Salseadas', description: '400 gramos, salsa a elegir', price: 85 },
+    { categoryName: 'Menu Grill', name: 'Papas Gajo', description: '400 gramos, acompañadas de queso amarillo, Ranch y catsup', price: 95 },
+    { categoryName: 'Menu Grill', name: 'Tocipapas', description: '400 gramos, acompañadas con queso amarillo, 200 gramos tocino', price: 95 },
+    { categoryName: 'Menu Grill', name: 'Tenders', description: '5 piezas, 4 bastones apio, 4 bastones zanahoria, Dip Ranch', price: 85 },
+    { categoryName: 'Menu Grill', name: 'Chiles Jalapeños Rellenos', description: '5 piezas, 4 bastones apio, 4 bastones zanahoria, Dip Ranch', price: 85 },
+    { categoryName: 'Menu Grill', name: 'Aros de Cebolla', description: '6 piezas, 4 bastones apio, 4 bastones zanahoria, Dip Ranch', price: 85 },
+    { categoryName: 'Menu Grill', name: 'Dedos de Queso', description: '6 piezas, 4 bastones apio, 4 bastones zanahoria, Dip Ranch', price: 85 },
+    { categoryName: 'Menu Grill', name: 'Nachos', description: '70 gramos, acompañados por queso amarillo y chiles en vinagre', price: 55 },
+    { categoryName: 'Menu Grill', name: 'Nachos Terraza (de la Casa)', description: '100 gramos nachos, acompañados por pico de gallo', price: 95 },
+    { categoryName: 'Menu Grill', name: 'Churros', description: '100 gramos, acompañados de una salsa picante', price: 55 },
+
+    // ═══════════════════════════════════════════════════════════════
+    // BEBIDAS
+    // ═══════════════════════════════════════════════════════════════
+
+    { categoryName: 'Bebidas', name: 'Refresco', description: null, price: 30 },
+    { categoryName: 'Bebidas', name: 'Limonada', description: null, price: 35 },
+    { categoryName: 'Bebidas', name: 'Naranjada', description: null, price: 35 },
+    { categoryName: 'Bebidas', name: 'Botella de Agua', description: null, price: 25 },
+    { categoryName: 'Bebidas', name: 'Jarra Limonada', description: null, price: 85 },
+    { categoryName: 'Bebidas', name: 'Jarra Naranjada', description: null, price: 85 },
+    { categoryName: 'Bebidas', name: 'Rusa', description: null, price: 35 },
+    { categoryName: 'Bebidas', name: 'Clamato Natural', description: null, price: 40 },
+    { categoryName: 'Bebidas', name: 'Clamato Preparado', description: null, price: 50 },
+    { categoryName: 'Bebidas', name: 'Piñada', description: null, price: 60 },
+    { categoryName: 'Bebidas', name: 'Tarro Chelado', description: null, price: 10 },
+    { categoryName: 'Bebidas', name: 'Tarro Cubano', description: null, price: 15 },
+    { categoryName: 'Bebidas', name: 'Tarro Fantasma', description: null, price: 25 },
+    { categoryName: 'Bebidas', name: 'Michelada 1/2', description: null, price: 55 },
+    { categoryName: 'Bebidas', name: 'Michelada 1 lt', description: null, price: 90 },
+
+    // Cerveza
+    { categoryName: 'Bebidas', name: 'Cerveza Corona', description: null, price: 36 },
+    { categoryName: 'Bebidas', name: 'Cerveza Victoria', description: null, price: 36 },
+    { categoryName: 'Bebidas', name: 'Cerveza Bohemia Clara', description: null, price: 43 },
+    { categoryName: 'Bebidas', name: 'Cerveza Bohemia Obscura', description: null, price: 43 },
+
+    // Cocteleria Clasica
+    { categoryName: 'Bebidas', name: 'Margarita', description: null, price: 80 },
+    { categoryName: 'Bebidas', name: 'Mezcalita', description: null, price: 80 },
+    { categoryName: 'Bebidas', name: 'Mojito', description: null, price: 80 },
+    { categoryName: 'Bebidas', name: 'Paloma', description: null, price: 80 },
+    { categoryName: 'Bebidas', name: 'Charro Negro', description: null, price: 80 },
+    { categoryName: 'Bebidas', name: 'Tom Collins', description: null, price: 80 },
+    { categoryName: 'Bebidas', name: 'Clericot Tinto', description: null, price: 80 },
+    { categoryName: 'Bebidas', name: 'Clericot Blanco', description: null, price: 80 },
+    { categoryName: 'Bebidas', name: 'Sangría Tinto', description: null, price: 80 },
+    { categoryName: 'Bebidas', name: 'Sangría Blanco', description: null, price: 80 },
+
+    // Sabores
+    { categoryName: 'Bebidas', name: 'Margarita de sabor', description: 'Maracuyá, Mango, Frutos rojos', price: 95 },
+    { categoryName: 'Bebidas', name: 'Mezcalita de sabor', description: 'Maracuyá, Mango, Frutos rojos', price: 95 },
+    { categoryName: 'Bebidas', name: 'Mojito de sabor', description: 'Maracuyá, Mango, Frutos rojos', price: 95 },
+
+    // Spritz
+    { categoryName: 'Bebidas', name: 'Aperol Spritz', description: null, price: 85 },
+    { categoryName: 'Bebidas', name: 'St. Germain Spritz', description: null, price: 95 },
+    { categoryName: 'Bebidas', name: '43 Spritz', description: null, price: 95 },
+
+    // Carajillo
+    { categoryName: 'Bebidas', name: 'Carajillo Español', description: null, price: 95 },
+    { categoryName: 'Bebidas', name: 'Carajillo Irlandés', description: null, price: 120 },
+    { categoryName: 'Bebidas', name: 'Carajillo Franciscano', description: null, price: 120 },
+    { categoryName: 'Bebidas', name: 'Carajillo Michoacano', description: null, price: 120 },
 ];
 
 export default async function seedMeals(categoryNameToId: Map<string, string>) {
     console.log('🌱 Seeding meals...');
     for (const meal of MEALS) {
         const categoryId = categoryNameToId.get(meal.categoryName);
-        if (!categoryId) continue;
+        if (!categoryId) {
+            console.error(`❌ Category not found: ${meal.categoryName} (for ${meal.name})`);
+            continue;
+        }
         const existing = await prisma.meal.findFirst({
             where: { name: meal.name, categoryId },
         });
@@ -94,7 +182,7 @@ export default async function seedMeals(categoryNameToId: Map<string, string>) {
                     price: meal.price,
                 },
             });
-            console.log(`✅ Created meal: ${meal.name}`);
+            console.log(`✅ Created meal: ${meal.name} — $${meal.price}`);
         }
     }
 }

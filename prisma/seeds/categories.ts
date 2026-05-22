@@ -1,16 +1,10 @@
 import { prisma } from '../prisma';
 
 const CATEGORIES = [
-    { name: 'Entradas' },
-    { name: 'Fuertes' },
-    { name: 'Ceviches y Cocteles' },
-    { name: 'Pescados' },
-    { name: 'Camarones' },
-    { name: 'Mariscos' },
-    { name: 'Sopas y Caldos' },
-    { name: 'Botanas' },
+    { name: 'Plato Fuerte' },
+    { name: 'Para Empezar' },
+    { name: 'Menu Grill' },
     { name: 'Bebidas' },
-    { name: 'Postres' },
 ];
 
 export default async function seedCategories(): Promise<Map<string, string>> {

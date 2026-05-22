@@ -16,7 +16,7 @@ const createTableSchema = z.object({
 export async function GET() {
     try {
         const tables = await prisma.table.findMany({
-            orderBy: { number: 'asc' },
+            orderBy: { id: 'asc' },
             select: {
                 id: true,
                 number: true,
