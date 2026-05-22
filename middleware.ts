@@ -35,19 +35,19 @@ export async function middleware(request: NextRequest) {
             
             // RBAC Mapping
             // ADMIN: all routes under /dashboard
-            // COCINERO: kitchen, recipes, menu
-            // BARTENDER: bartender
+            // COCINA: kitchen, recipes, menu
+            // BARRA: bartender
             // MESERO: exact /dashboard and /dashboard/cashier
             
             let isAllowed = false;
 
             if (userRole === 'ADMIN') {
                 isAllowed = true;
-            } else if (userRole === 'COCINERO') {
+            } else if (userRole === 'COCINA') {
                 isAllowed = pathname.startsWith('/dashboard/kitchen') ||
                             pathname.startsWith('/dashboard/recipes') ||
                             pathname.startsWith('/dashboard/menu');
-            } else if (userRole === 'BARTENDER') {
+            } else if (userRole === 'BARRA') {
                 isAllowed = pathname.startsWith('/dashboard/bartender');
             } else if (userRole === 'MESERO') {
                 isAllowed = pathname === '/dashboard';
@@ -56,8 +56,8 @@ export async function middleware(request: NextRequest) {
             if (!isAllowed) {
                 // Redirect to their default allowed route
                 let redirectPath = '/login';
-                if (userRole === 'COCINERO') redirectPath = '/dashboard/kitchen';
-                else if (userRole === 'BARTENDER') redirectPath = '/dashboard/bartender';
+                if (userRole === 'COCINA') redirectPath = '/dashboard/kitchen';
+                else if (userRole === 'BARRA') redirectPath = '/dashboard/bartender';
                 else if (userRole === 'MESERO') redirectPath = '/dashboard';
                 else redirectPath = '/dashboard';
 
