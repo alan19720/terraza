@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-const EMPTY_PRODUCT: ProductFormData = { name: '', description: '', unit: 'piezas', currentStock: '0', minimumStock: '0', active: true };
+const EMPTY_PRODUCT: ProductFormData = { name: '', description: '', unit: 'piezas', currentStock: '0', minimumStock: '0', yieldPercent: '100', grossWeight: '0', unitPrice: '0', supplier: '', active: true };
 const EMPTY_STOCK: StockFormData = { type: 'IN', quantity: '', notes: '' };
 const UNIT_OPTIONS = ['piezas', 'kg', 'litros', 'gramos', 'ml', 'cajas', 'bolsas', 'latas'];
 
@@ -66,7 +66,18 @@ export default function InventoryPage() {
     const openCreateProduct = () => { setEditingProduct(null); setProductForm(EMPTY_PRODUCT); setProductFormError(null); setProductModalOpen(true); };
     const openEditProduct = (p: InventoryProductRow) => {
         setEditingProduct(p);
-        setProductForm({ name: p.name, description: p.description ?? '', unit: p.unit, currentStock: String(p.currentStock), minimumStock: String(p.minimumStock), active: p.active });
+        setProductForm({ 
+            name: p.name, 
+            description: p.description ?? '', 
+            unit: p.unit, 
+            currentStock: String(p.currentStock), 
+            minimumStock: String(p.minimumStock), 
+            yieldPercent: String(p.yieldPercent ?? 100),
+            grossWeight: String(p.grossWeight ?? 0),
+            unitPrice: String(p.unitPrice ?? 0),
+            supplier: p.supplier ?? '',
+            active: p.active 
+        });
         setProductFormError(null); setProductModalOpen(true);
     };
     const closeProductModal = () => { setProductModalOpen(false); setEditingProduct(null); setProductForm(EMPTY_PRODUCT); setProductFormError(null); };
@@ -77,8 +88,8 @@ export default function InventoryPage() {
             const isEdit = !!editingProduct;
             const url = isEdit ? INVENTORY_ROUTES.UPDATE(editingProduct!.id) : INVENTORY_ROUTES.CREATE;
             const body: Record<string, unknown> = isEdit
-                ? { name: productForm.name, description: productForm.description, unit: productForm.unit, minimumStock: parseInt(productForm.minimumStock), active: productForm.active }
-                : { name: productForm.name, description: productForm.description, unit: productForm.unit, currentStock: parseInt(productForm.currentStock), minimumStock: parseInt(productForm.minimumStock), active: productForm.active };
+                ? { name: productForm.name, description: productForm.description, unit: productForm.unit, minimumStock: parseInt(productForm.minimumStock), yieldPercent: parseFloat(productForm.yieldPercent), grossWeight: parseFloat(productForm.grossWeight), unitPrice: parseFloat(productForm.unitPrice), supplier: productForm.supplier, active: productForm.active }
+                : { name: productForm.name, description: productForm.description, unit: productForm.unit, currentStock: parseInt(productForm.currentStock), minimumStock: parseInt(productForm.minimumStock), yieldPercent: parseFloat(productForm.yieldPercent), grossWeight: parseFloat(productForm.grossWeight), unitPrice: parseFloat(productForm.unitPrice), supplier: productForm.supplier, active: productForm.active };
             const res = await fetch(url, { method: isEdit ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) });
             const json = await res.json();
             if (!res.ok) { setProductFormError(json.error || 'Something went wrong'); return; }
@@ -168,8 +179,9 @@ export default function InventoryPage() {
                                     <tr className="border-b border-gray-100">
                                         <th className="text-left py-3 px-5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Producto</th>
                                         <th className="text-right py-3 px-5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Stock Actual</th>
-                                        <th className="text-right py-3 px-5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Stock Mínimo</th>
-                                        <th className="text-left py-3 px-5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Unidad</th>
+                                        <th className="text-right py-3 px-5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Rend. / P. Neto</th>
+                                        <th className="text-right py-3 px-5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Precio</th>
+                                        <th className="text-left py-3 px-5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider hidden lg:table-cell">Unidad</th>
                                         <th className="text-left py-3 px-5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Estado</th>
                                         <th className="text-right py-3 px-5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Acciones</th>
                                     </tr>
@@ -191,8 +203,14 @@ export default function InventoryPage() {
                                             <td className="px-5 py-3.5 text-right">
                                                 <span className={`font-semibold ${isLowStock(p) ? 'text-red-600' : 'text-gray-800'}`}>{p.currentStock}</span>
                                             </td>
-                                            <td className="px-5 py-3.5 text-right text-gray-400 hidden md:table-cell">{p.minimumStock}</td>
-                                            <td className="px-5 py-3.5 text-gray-500 hidden md:table-cell">{p.unit}</td>
+                                            <td className="px-5 py-3.5 text-right hidden md:table-cell">
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-gray-700">{p.yieldPercent}%</span>
+                                                    <span className="text-xs text-gray-400">Neto: ${(parseFloat(p.unitPrice) / (p.yieldPercent / 100 || 1)).toFixed(2)}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-5 py-3.5 text-right text-gray-600 font-medium hidden md:table-cell">${parseFloat(p.unitPrice).toFixed(2)}</td>
+                                            <td className="px-5 py-3.5 text-gray-500 hidden lg:table-cell">{p.unit}</td>
                                             <td className="px-5 py-3.5">
                                                 {p.active ? (
                                                     <span className="inline-flex items-center gap-1 text-emerald-600 text-xs font-medium"><Check className="w-3.5 h-3.5" /> Activo</span>
@@ -265,6 +283,51 @@ export default function InventoryPage() {
                                     <label className="block text-xs font-medium text-gray-600 mb-1.5">Stock Mínimo</label>
                                     <input type="number" required min="0" value={productForm.minimumStock} onChange={(e) => setProductForm((d) => ({ ...d, minimumStock: e.target.value }))}
                                         className="w-full h-9 px-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none text-sm text-gray-700 transition-all" placeholder="0" />
+                                </div>
+                            </div>
+
+                            {/* COSTING & FINANCIAL FIELDS */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1.5">% Rendimiento</label>
+                                    <div className="relative">
+                                        <input type="number" required min="1" max="100" value={productForm.yieldPercent} onChange={(e) => setProductForm((d) => ({ ...d, yieldPercent: e.target.value }))}
+                                            className="w-full h-9 px-3 pr-8 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none text-sm text-gray-700 transition-all" placeholder="100" />
+                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Precio Unidad (Bruto)</label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                                        <input type="number" required min="0" step="0.01" value={productForm.unitPrice} onChange={(e) => setProductForm((d) => ({ ...d, unitPrice: e.target.value }))}
+                                            className="w-full h-9 pl-7 px-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none text-sm text-gray-700 transition-all" placeholder="0.00" />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Peso Bruto (opcional)</label>
+                                    <input type="number" min="0" step="0.01" value={productForm.grossWeight} onChange={(e) => setProductForm((d) => ({ ...d, grossWeight: e.target.value }))}
+                                        className="w-full h-9 px-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none text-sm text-gray-700 transition-all" placeholder="0" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Proveedor</label>
+                                    <input type="text" value={productForm.supplier} onChange={(e) => setProductForm((d) => ({ ...d, supplier: e.target.value }))}
+                                        className="w-full h-9 px-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none text-sm text-gray-700 transition-all" placeholder="Nombre proveedor" />
+                                </div>
+                            </div>
+
+                            {/* DYNAMIC CALCULATIONS PREVIEW */}
+                            <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-3 text-xs flex justify-between items-center text-blue-800">
+                                <div>
+                                    <span className="block font-medium">Peso Neto Estimado</span>
+                                    <span className="text-lg font-semibold">{((parseFloat(productForm.grossWeight) || 0) * ((parseFloat(productForm.yieldPercent) || 100) / 100)).toFixed(2)}</span>
+                                </div>
+                                <div className="text-right">
+                                    <span className="block font-medium">Precio Neto Estimado</span>
+                                    <span className="text-lg font-semibold">${((parseFloat(productForm.unitPrice) || 0) / ((parseFloat(productForm.yieldPercent) || 100) / 100)).toFixed(2)}</span>
                                 </div>
                             </div>
                             {editingProduct && (

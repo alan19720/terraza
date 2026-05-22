@@ -9,6 +9,10 @@ const createProductSchema = z.object({
     unit: z.string().min(1, 'Unit is required'),
     currentStock: z.number().int().min(0).default(0),
     minimumStock: z.number().int().min(0).default(0),
+    yieldPercent: z.number().min(0).max(100).default(100),
+    grossWeight: z.number().min(0).default(0),
+    unitPrice: z.number().min(0).default(0),
+    supplier: z.string().optional().default(''),
     active: z.boolean().optional().default(true),
 });
 
@@ -41,10 +45,10 @@ export async function POST(request: NextRequest) {
             return errorResponse(Object.values(errors).flat().join(', '), 400);
         }
 
-        const { name, description, unit, currentStock, minimumStock, active } = validation.data;
+        const { name, description, unit, currentStock, minimumStock, yieldPercent, grossWeight, unitPrice, supplier, active } = validation.data;
 
         const product = await prisma.inventoryProduct.create({
-            data: { name, description: description || null, unit, currentStock, minimumStock, active },
+            data: { name, description: description || null, unit, currentStock, minimumStock, yieldPercent, grossWeight, unitPrice, supplier: supplier || null, active },
         });
 
         // Record initial stock if > 0

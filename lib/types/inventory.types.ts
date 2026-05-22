@@ -9,6 +9,10 @@ export interface InventoryProductRow {
     unit: string;
     currentStock: number;
     minimumStock: number;
+    yieldPercent: number;
+    grossWeight: number;
+    unitPrice: string;
+    supplier: string | null;
     active: boolean;
     createdAt: string;
 }
@@ -19,6 +23,10 @@ export interface ProductFormData {
     unit: string;
     currentStock: string;
     minimumStock: string;
+    yieldPercent: string;
+    grossWeight: string;
+    unitPrice: string;
+    supplier: string;
     active: boolean;
 }
 

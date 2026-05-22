@@ -13,16 +13,22 @@ import {
     BookOpen,
     BarChart3,
     Users,
-    Settings
+    Settings,
+    ClipboardList,
+    LayoutGrid,
+    GlassWater
 } from 'lucide-react';
 
 const menuItems = [
     { icon: LayoutDashboard, label: 'Panel', href: '/dashboard' },
     { icon: UtensilsCrossed, label: 'Mesas / Venta', href: '/dashboard/service' },
     { icon: ChefHat, label: 'Cocina', href: '/dashboard/kitchen' },
+    { icon: GlassWater, label: 'Barra', href: '/dashboard/bartender' },
     { icon: Wallet, label: 'Caja', href: '/dashboard/cashier' },
     { icon: Package, label: 'Inventario', href: '/dashboard/inventory' },
+    { icon: ClipboardList, label: 'Recetario', href: '/dashboard/recipes' },
     { icon: BookOpen, label: 'Menú', href: '/dashboard/menu' },
+    { icon: LayoutGrid, label: 'Mesas', href: '/dashboard/tables' },
     { icon: BarChart3, label: 'Reportes', href: '/dashboard/reports' },
     { icon: Users, label: 'Usuarios', href: '/dashboard/users' },
 ];

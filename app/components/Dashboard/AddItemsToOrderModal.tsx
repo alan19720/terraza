@@ -1,66 +1,16 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import useSWR from 'swr';
 import {
     X, Plus, Minus, Loader2, ShoppingCart,
-    UtensilsCrossed, GlassWater, IceCreamCone,
-    Shell, Fish, Shrub, Soup, Sandwich,
+    UtensilsCrossed,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { ORDER_ROUTES } from '@/lib/config/routes';
 
 type Meal = { id: string; name: string; description: string | null; price: number };
 type Category = { id: string; name: string; meals: Meal[] };
 type CartItem = { mealId: string; name: string; price: number; quantity: number };
-
-type Division = {
-    key: string;
-    label: string;
-    icon: LucideIcon;
-    color: string;
-    bg: string;
-    border: string;
-    categoryNames: string[];
-};
-
-const DIVISIONS: Division[] = [
-    {
-        key: 'comidas',
-        label: 'Comidas',
-        icon: UtensilsCrossed,
-        color: 'text-orange-600',
-        bg: 'bg-orange-50',
-        border: 'border-orange-200',
-        categoryNames: ['Ceviches y Cocteles', 'Pescados', 'Camarones', 'Mariscos', 'Sopas y Caldos', 'Botanas'],
-    },
-    {
-        key: 'bebidas',
-        label: 'Bebidas',
-        icon: GlassWater,
-        color: 'text-sky-600',
-        bg: 'bg-sky-50',
-        border: 'border-sky-200',
-        categoryNames: ['Bebidas'],
-    },
-    {
-        key: 'postres',
-        label: 'Postres',
-        icon: IceCreamCone,
-        color: 'text-pink-600',
-        bg: 'bg-pink-50',
-        border: 'border-pink-200',
-        categoryNames: ['Postres'],
-    },
-];
-
-const CATEGORY_ICONS: Record<string, LucideIcon> = {
-    'Ceviches y Cocteles': Shell,
-    'Pescados': Fish,
-    'Camarones': Shrub,
-    'Mariscos': Shell,
-    'Sopas y Caldos': Soup,
-    'Botanas': Sandwich,
-};
 
 type Props = {
     open: boolean;
@@ -71,46 +21,27 @@ type Props = {
 };
 
 export default function AddItemsToOrderModal({ open, orderId, tableNumber, onClose, onSuccess }: Props) {
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [loading, setLoading] = useState(false);
+    const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(r => r.json());
+    const { data: categoriesData, isLoading: loading } = useSWR(open ? '/api/categories' : null, fetcher);
+    const categories: Category[] = useMemo(() => categoriesData?.data?.categories ?? [], [categoriesData]);
     const [submitting, setSubmitting] = useState(false);
     const [cart, setCart] = useState<CartItem[]>([]);
-    const [activeDivision, setActiveDivision] = useState('comidas');
     const [activeCategory, setActiveCategory] = useState('');
 
     useEffect(() => {
         if (!open) return;
         setCart([]);
-        setActiveDivision('comidas');
         setActiveCategory('');
-        setLoading(true);
-        fetch(`/api/categories?t=${Date.now()}`, { credentials: 'include', cache: 'no-store' })
-            .then((r) => r.json())
-            .then((cRes) => {
-                if (cRes.success) setCategories(cRes.data.categories);
-            })
-            .finally(() => setLoading(false));
     }, [open]);
 
-    const currentDivision = DIVISIONS.find((d) => d.key === activeDivision) ?? DIVISIONS[0];
-
-    const divisionCategories = useMemo(
-        () => categories.filter((c) => currentDivision.categoryNames.includes(c.name)),
-        [categories, currentDivision]
-    );
-
-    const selectedCategory = activeCategory
-        ? divisionCategories.find((c) => c.id === activeCategory)
-        : divisionCategories[0];
-
+    // Auto-select the first category when categories load
     useEffect(() => {
-        if (divisionCategories.length > 0) {
-            setActiveCategory(divisionCategories[0].id);
-        } else {
-            setActiveCategory('');
+        if (categories.length > 0 && !activeCategory) {
+            setActiveCategory(categories[0].id);
         }
-    }, [activeDivision, divisionCategories]);
+    }, [categories, activeCategory]);
 
+    const selectedCategory = categories.find((c) => c.id === activeCategory) ?? categories[0] ?? null;
     const meals = selectedCategory?.meals ?? [];
 
     const addToCart = (meal: Meal, qty = 1) => {
@@ -190,51 +121,34 @@ export default function AddItemsToOrderModal({ open, orderId, tableNumber, onClo
                 ) : (
                     <div className="flex-1 overflow-hidden flex min-h-0">
                         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                            <div className="px-4 pt-3 pb-1 flex gap-2 shrink-0">
-                                {DIVISIONS.map((div) => {
-                                    const isActive = activeDivision === div.key;
+                            {/* Category tabs */}
+                            <div className="px-4 pt-3 pb-2 flex gap-1.5 overflow-x-auto shrink-0">
+                                {categories.map((cat) => {
+                                    const isActive = selectedCategory?.id === cat.id;
                                     return (
                                         <button
-                                            key={div.key}
+                                            key={cat.id}
                                             type="button"
-                                            onClick={() => setActiveDivision(div.key)}
-                                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer border ${
+                                            onClick={() => setActiveCategory(cat.id)}
+                                            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all cursor-pointer border ${
                                                 isActive
-                                                    ? `${div.bg} ${div.color} ${div.border}`
+                                                    ? 'bg-primary text-white border-primary shadow-sm'
                                                     : 'bg-white border-gray-100 text-gray-500 hover:bg-gray-50 hover:border-gray-200'
                                             }`}
                                         >
-                                            <div.icon className="w-4 h-4" />
-                                            {div.label}
+                                            {cat.name}
+                                            <span className={`text-xs ${isActive ? 'text-white/70' : 'text-gray-300'}`}>
+                                                ({cat.meals.length})
+                                            </span>
                                         </button>
                                     );
                                 })}
+                                {categories.length === 0 && (
+                                    <p className="text-sm text-gray-400 py-2">No hay categorías</p>
+                                )}
                             </div>
 
-                            {divisionCategories.length > 1 && (
-                                <div className="px-4 py-2 flex gap-1.5 overflow-x-auto shrink-0">
-                                    {divisionCategories.map((cat) => {
-                                        const isActive = selectedCategory?.id === cat.id;
-                                        const Icon = CATEGORY_ICONS[cat.name];
-                                        return (
-                                            <button
-                                                key={cat.id}
-                                                type="button"
-                                                onClick={() => setActiveCategory(cat.id)}
-                                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
-                                                    isActive
-                                                        ? 'bg-primary text-white'
-                                                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                                                }`}
-                                            >
-                                                {Icon && <Icon className="w-3.5 h-3.5" />}
-                                                {cat.name}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            )}
-
+                            {/* Meals grid */}
                             <div className="flex-1 overflow-y-auto px-4 py-2">
                                 <div className="grid grid-cols-2 gap-2">
                                     {meals.map((meal) => {
@@ -245,7 +159,7 @@ export default function AddItemsToOrderModal({ open, orderId, tableNumber, onClo
                                                 onClick={() => addToCart(meal)}
                                                 className={`relative text-left p-3 rounded-xl border transition-all cursor-pointer active:scale-[0.98] ${
                                                     inCart
-                                                        ? `${currentDivision.bg} ${currentDivision.border}`
+                                                        ? 'bg-primary/5 border-primary/30'
                                                         : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-sm'
                                                 }`}
                                             >
@@ -254,7 +168,7 @@ export default function AddItemsToOrderModal({ open, orderId, tableNumber, onClo
                                                     <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{meal.description}</p>
                                                 )}
                                                 <div className="flex items-center justify-between mt-2">
-                                                    <span className={`text-sm font-semibold ${currentDivision.color}`}>
+                                                    <span className="text-sm font-semibold text-primary">
                                                         ${Number(meal.price).toFixed(0)}
                                                     </span>
                                                     <div className="flex items-center gap-1">
@@ -268,7 +182,7 @@ export default function AddItemsToOrderModal({ open, orderId, tableNumber, onClo
                                                             </button>
                                                         )}
                                                         {inCart && (
-                                                            <span className={`text-xs font-bold min-w-[20px] text-center ${currentDivision.color}`}>
+                                                            <span className="text-xs font-bold min-w-[20px] text-center text-primary">
                                                                 {inCart.quantity}
                                                             </span>
                                                         )}
@@ -290,9 +204,10 @@ export default function AddItemsToOrderModal({ open, orderId, tableNumber, onClo
                                     })}
                                 </div>
                                 {meals.length === 0 && (
-                                    <p className="text-sm text-gray-400 text-center py-8">
-                                        No hay platillos en esta categoría
-                                    </p>
+                                    <div className="flex flex-col items-center justify-center py-12 text-gray-300">
+                                        <UtensilsCrossed className="w-8 h-8 mb-2" />
+                                        <p className="text-sm">No hay platillos en esta categoría</p>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -374,3 +289,4 @@ export default function AddItemsToOrderModal({ open, orderId, tableNumber, onClo
         </div>
     );
 }
+

@@ -4,6 +4,7 @@ import { useAuth } from '@/app/contexts/AuthContext';
 import { MEAL_ROUTES, CATEGORY_ROUTES } from '@/lib/config/routes';
 import { MealRow, MealFormData, CategoryRow, CategoryFormData } from '@/lib/types/menu.types';
 import { useState, useEffect, useCallback } from 'react';
+import { mutate } from 'swr';
 import {
     Loader2, Plus, Pencil, X, Search, Check, Ban, UtensilsCrossed, FolderOpen,
 } from 'lucide-react';
@@ -96,6 +97,7 @@ export default function MenuPage() {
             const json = await res.json();
             if (!res.ok) { setMealFormError(json.error || 'Something went wrong'); return; }
             closeMealModal(); fetchMeals(); fetchCategories();
+            mutate('/api/categories');
         } catch { setMealFormError('Network error'); } finally { setMealSubmitting(false); }
     };
 
@@ -106,6 +108,7 @@ export default function MenuPage() {
                 credentials: 'include', body: JSON.stringify({ isAvailable: !m.isAvailable }),
             });
             fetchMeals();
+            mutate('/api/categories');
         } catch { /* silent */ }
     };
 
@@ -128,6 +131,7 @@ export default function MenuPage() {
             const json = await res.json();
             if (!res.ok) { setCatFormError(json.error || 'Something went wrong'); return; }
             closeCatModal(); fetchCategories(); fetchMeals();
+            mutate('/api/categories');
         } catch { setCatFormError('Network error'); } finally { setCatSubmitting(false); }
     };
 

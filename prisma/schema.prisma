@@ -147,11 +147,16 @@ model InventoryProduct {
   unit         String   @default("piezas")
   currentStock Int      @default(0)
   minimumStock Int      @default(0)
+  yieldPercent Float    @default(100)
+  grossWeight  Float    @default(0)
+  unitPrice    Decimal  @default(0)
+  supplier     String?
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt @default(now())
 
-  stockMovements StockMovement[]
+  stockMovements    StockMovement[]
+  recipeIngredients RecipeIngredient[]
 }
 
 model StockMovement {
@@ -164,3 +169,34 @@ model StockMovement {
 
   product InventoryProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
+
+// ─── 6. Recipe Costing (Recetario) ──────────────────────────────────
+
+model Recipe {
+  id              String   @id @default(uuid())
+  name            String
+  dishType        String
+  preparationTime Int      @default(0)
+  season          String   @default("Todo el año")
+  portionSize     Float    @default(0)
+  portionsYield   Int      @default(1)
+  sellingPrice    Decimal  @default(0)
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  ingredients RecipeIngredient[]
+}
+
+model RecipeIngredient {
+  id           String @id @default(uuid())
+  recipeId     String
+  ingredientId String
+  quantityUsed Float
+
+  recipe     Recipe           @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredient InventoryProduct @relation(fields: [ingredientId], references: [id])
+
+  @@unique([recipeId, ingredientId])
+}
+

@@ -37,7 +37,7 @@ type OrderRow = {
         unitPrice: string;
         kitchenStatus: string;
         kitchenNotes: string | null;
-        meal: { name: string };
+        meal: { name: string; category: { name: string } };
     }[];
     payments?: {
         id: string;
@@ -135,8 +135,15 @@ export default function DashboardPage() {
     }, [bumpTablesRefresh]);
 
     useEffect(() => {
-        if (!isLoading && user) fetchOrders();
-    }, [isLoading, user, fetchOrders]);
+        if (!isLoading && user) {
+            fetchOrders();
+            // Real-Time Synchronization via background polling
+            const interval = setInterval(() => {
+                void refreshOrdersKeepSelection();
+            }, 3000);
+            return () => clearInterval(interval);
+        }
+    }, [isLoading, user, fetchOrders, refreshOrdersKeepSelection]);
 
     if (isLoading) {
         return (
@@ -204,7 +211,16 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Tables */}
-                {isAdmin && <TablesPanel refreshKey={tablesRefreshKey} />}
+                {isAdmin && (
+                    <TablesPanel 
+                        refreshKey={tablesRefreshKey} 
+                        openOrders={openOrders} 
+                        onTableClick={(tableNumber) => {
+                            const order = openOrders.find(o => String(o.table.number) === String(tableNumber));
+                            if (order) setSelectedOrder(order);
+                        }}
+                    />
+                )}
 
                 {/* Orders table */}
                 <div className="bg-white rounded-xl border border-gray-100">

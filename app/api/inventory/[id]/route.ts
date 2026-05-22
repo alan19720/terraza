@@ -8,6 +8,10 @@ const updateProductSchema = z.object({
     description: z.string().optional(),
     unit: z.string().min(1).optional(),
     minimumStock: z.number().int().min(0).optional(),
+    yieldPercent: z.number().min(0).max(100).optional(),
+    grossWeight: z.number().min(0).optional(),
+    unitPrice: z.number().min(0).optional(),
+    supplier: z.string().optional(),
     active: z.boolean().optional(),
 });
 
@@ -31,12 +35,16 @@ export async function PUT(
             return errorResponse(Object.values(errors).flat().join(', '), 400);
         }
 
-        const { name, description, unit, minimumStock, active } = validation.data;
+        const { name, description, unit, minimumStock, yieldPercent, grossWeight, unitPrice, supplier, active } = validation.data;
         const data: Record<string, unknown> = {};
         if (name !== undefined) data.name = name;
         if (description !== undefined) data.description = description || null;
         if (unit !== undefined) data.unit = unit;
         if (minimumStock !== undefined) data.minimumStock = minimumStock;
+        if (yieldPercent !== undefined) data.yieldPercent = yieldPercent;
+        if (grossWeight !== undefined) data.grossWeight = grossWeight;
+        if (unitPrice !== undefined) data.unitPrice = unitPrice;
+        if (supplier !== undefined) data.supplier = supplier || null;
         if (active !== undefined) data.active = active;
 
         const product = await prisma.inventoryProduct.update({ where: { id }, data });

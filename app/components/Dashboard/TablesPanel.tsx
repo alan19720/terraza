@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2, RefreshCw, CircleDot, Settings2, Check, Waves } from 'lucide-react';
-import { TableStatus } from '@/app/generated/prisma/enums';
+import { TableStatus, KitchenStatus } from '@/app/generated/prisma/enums';
 
 type Table = {
     id: string;
@@ -13,9 +13,11 @@ type Table = {
 type Props = {
     /** Súbelo desde el panel cuando cambien órdenes/mesas; vuelve a cargar mesas sin bloquear toda la tarjeta. */
     refreshKey?: number;
+    openOrders?: any[];
+    onTableClick?: (tableNumber: string) => void;
 };
 
-export default function TablesPanel({ refreshKey = 0 }: Props) {
+export default function TablesPanel({ refreshKey = 0, openOrders = [], onTableClick }: Props) {
     const [tables, setTables] = useState<Table[]>([]);
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState<string | null>(null);
@@ -119,9 +121,11 @@ export default function TablesPanel({ refreshKey = 0 }: Props) {
 
                         return (
                             <div key={table.id} className="relative" ref={isOpen ? menuRef : undefined}>
-                                <div className={`relative rounded-2xl p-4 transition-all ${
+                                <div 
+                                    onClick={() => isOccupied && onTableClick?.(table.number)}
+                                    className={`relative rounded-2xl p-4 transition-all ${
                                     isOccupied
-                                        ? 'bg-primary text-white shadow-md'
+                                        ? 'bg-primary text-white shadow-md cursor-pointer'
                                         : 'bg-gray-50 text-gray-800 border border-gray-100'
                                 } ${isOpen ? (isOccupied ? 'ring-2 ring-secondary' : 'ring-2 ring-primary') : ''}`}>
 
@@ -144,11 +148,39 @@ export default function TablesPanel({ refreshKey = 0 }: Props) {
                                             {isOccupied ? 'Ocupada' : 'Disponible'}
                                         </p>
                                     </div>
+                                    
+                                    {/* Ready Item Notifications */}
+                                    {isOccupied && (
+                                        <div className="absolute -bottom-3 left-0 right-0 flex justify-center z-10">
+                                            {(() => {
+                                                const order = openOrders.find(o => String(o.table.number) === String(table.number));
+                                                if (!order) return null;
+                                                
+                                                const readyItems = order.orderDetails.filter((d: any) => d.kitchenStatus === KitchenStatus.READY);
+                                                if (readyItems.length === 0) return null;
+
+                                                const hasDrinks = readyItems.some((d: any) => d.meal.category?.name === 'Bebidas');
+                                                const hasFood = readyItems.some((d: any) => d.meal.category?.name !== 'Bebidas');
+
+                                                if (hasDrinks && hasFood) {
+                                                    return <span className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm animate-pulse">¡Pedido Listo!</span>;
+                                                } else if (hasDrinks) {
+                                                    return <span className="bg-cyan-500 text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm animate-pulse">¡Trago Listo!</span>;
+                                                } else if (hasFood) {
+                                                    return <span className="bg-emerald-500 text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm animate-pulse">¡Platillo Listo!</span>;
+                                                }
+                                                return null;
+                                            })()}
+                                        </div>
+                                    )}
 
                                     {/* Settings button */}
                                     <button
                                         type="button"
-                                        onClick={() => setOpenMenu(isOpen ? null : table.id)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenMenu(isOpen ? null : table.id);
+                                        }}
                                         disabled={isUpdating}
                                         className={`absolute top-2 right-2 p-1.5 rounded-lg transition-colors cursor-pointer ${
                                             isOccupied

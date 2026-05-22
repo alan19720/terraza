@@ -67,7 +67,7 @@ export const TABLE_ROUTES = {
  * Kitchen queue & line-item status
  */
 export const KITCHEN_ROUTES = {
-    ORDERS: `${API_BASE}/kitchen/orders`,
+    ORDERS: (type?: string) => `${API_BASE}/kitchen/orders${type ? `?type=${type}` : ''}`,
     UPDATE_ITEM: (orderDetailId: string) => `${API_BASE}/kitchen/items/${orderDetailId}`,
 } as const;
 
@@ -95,6 +95,23 @@ export const INVENTORY_ROUTES = {
     DELETE: (id: string) => `${API_BASE}/inventory/${id}`,
     STOCK: `${API_BASE}/inventory/stock`,
     MOVEMENTS: `${API_BASE}/inventory/stock`,
+} as const;
+
+/**
+ * Recipe costing endpoints
+ */
+export const RECIPE_ROUTES = {
+    LIST: `${API_BASE}/recipes`,
+    CREATE: `${API_BASE}/recipes`,
+    UPDATE: (id: string) => `${API_BASE}/recipes/${id}`,
+    DELETE: (id: string) => `${API_BASE}/recipes/${id}`,
+} as const;
+
+/**
+ * Cashier endpoints
+ */
+export const CASHIER_ROUTES = {
+    SUMMARY: `${API_BASE}/cashier`,
 } as const;
 
 /**

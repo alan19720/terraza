@@ -3,5 +3,5 @@
 import KitchenQueue from '@/app/components/Dashboard/KitchenQueue';
 
 export default function KitchenPage() {
-    return <KitchenQueue />;
+    return <KitchenQueue viewType="kitchen" />;
 }

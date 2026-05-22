@@ -10,6 +10,7 @@ import {
     CircleDot,
     Flame,
     CheckCircle2,
+    GlassWater,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { KitchenStatus } from '@/app/generated/prisma/enums';
@@ -117,26 +118,58 @@ function isHomogeneous(order: KitchenOrder): boolean {
     return new Set(active.map((d) => d.kitchenStatus)).size === 1;
 }
 
-export default function KitchenQueue() {
+function TicketTimer({ createdAt }: { createdAt: string }) {
+    const [elapsed, setElapsed] = useState(0);
+
+    useEffect(() => {
+        const calculate = () => {
+            const diff = Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000);
+            setElapsed(Math.max(0, diff));
+        };
+        calculate();
+        const interval = setInterval(calculate, 1000);
+        return () => clearInterval(interval);
+    }, [createdAt]);
+
+    const m = Math.floor(elapsed / 60);
+    const s = elapsed % 60;
+    const isLate = elapsed > 15 * 60; // 15 minutes
+    
+    return (
+        <div className={`text-[10px] sm:text-xs font-mono font-bold tracking-wider px-2 py-0.5 rounded-md border ${
+            isLate 
+                ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' 
+                : 'bg-white/10 text-white border-white/20'
+        }`}>
+            {m.toString().padStart(2, '0')}:{s.toString().padStart(2, '0')}
+        </div>
+    );
+}
+
+export default function KitchenQueue({ viewType = 'kitchen' }: { viewType?: 'kitchen' | 'bartender' }) {
     const [orders, setOrders] = useState<KitchenOrder[]>([]);
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-    const fetchQueue = useCallback(async () => {
-        setLoading(true);
+    const fetchQueue = useCallback(async (quiet = false) => {
+        if (!quiet) setLoading(true);
         try {
-            const res = await fetch(KITCHEN_ROUTES.ORDERS, { credentials: 'include' });
+            const res = await fetch(KITCHEN_ROUTES.ORDERS(viewType), { credentials: 'include' });
             const data = await res.json();
             if (data.success) setOrders(data.data.orders);
         } catch {
             /* ignore */
         } finally {
-            setLoading(false);
+            if (!quiet) setLoading(false);
         }
-    }, []);
+    }, [viewType]);
 
     useEffect(() => {
-        fetchQueue();
+        void fetchQueue(false);
+        const interval = setInterval(() => {
+            void fetchQueue(true);
+        }, 3000);
+        return () => clearInterval(interval);
     }, [fetchQueue]);
 
     const updateLine = async (orderId: string, lineId: string, kitchenStatus: string) => {
@@ -204,19 +237,24 @@ export default function KitchenQueue() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shrink-0">
-                        <ChefHat className="w-5 h-5 text-secondary" />
+                        {viewType === 'bartender' ? (
+                            <GlassWater className="w-5 h-5 text-secondary" />
+                        ) : (
+                            <ChefHat className="w-5 h-5 text-secondary" />
+                        )}
                     </div>
                     <div>
-                        <h1 className="text-lg font-semibold text-gray-900">Cocina</h1>
+                        <h1 className="text-lg font-semibold text-gray-900">
+                            {viewType === 'bartender' ? 'Barra' : 'Cocina'}
+                        </h1>
                         <p className="text-sm text-gray-400">
-                            {orders.length} orden{orders.length !== 1 ? 'es' : ''} · {pendingCount} platillo
-                            {pendingCount !== 1 ? 's' : ''} por salir
+                            {orders.length} orden{orders.length !== 1 ? 'es' : ''} · {pendingCount} {viewType === 'bartender' ? 'trago' : 'platillo'}{pendingCount !== 1 ? 's' : ''} por salir
                         </p>
                     </div>
                 </div>
                 <button
                     type="button"
-                    onClick={fetchQueue}
+                    onClick={() => void fetchQueue(false)}
                     disabled={loading}
                     className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-primary hover:bg-gray-50 cursor-pointer disabled:opacity-50 shrink-0"
                 >
@@ -273,17 +311,15 @@ export default function KitchenQueue() {
                                                 className="rounded-xl border border-gray-100 bg-gray-50/80 overflow-hidden text-left"
                                             >
                                                 <div className="flex flex-wrap items-center gap-2 justify-between px-3 py-2.5 bg-primary text-white">
-                                                    <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-3">
                                                         <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-primary text-sm font-bold">
                                                             {order.table.number}
                                                         </span>
-                                                        <div>
+                                                        <div className="flex flex-col items-start gap-1">
                                                             <p className="font-semibold text-sm leading-tight">
                                                                 Mesa {order.table.number}
                                                             </p>
-                                                            <p className="text-[10px] text-white/70">
-                                                                {formatTime(order.createdAt)}
-                                                            </p>
+                                                            <TicketTimer createdAt={order.createdAt} />
                                                         </div>
                                                     </div>
                                                     <div className="flex flex-col items-end gap-1">

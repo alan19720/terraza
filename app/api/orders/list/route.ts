@@ -39,7 +39,7 @@ export const GET = withAuth(async (_request, user) => {
                         unitPrice: true,
                         kitchenStatus: true,
                         kitchenNotes: true,
-                        meal: { select: { name: true } },
+                        meal: { select: { name: true, category: { select: { name: true } } } },
                     },
                 },
                 payments: {
