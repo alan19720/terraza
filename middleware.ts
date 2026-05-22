@@ -30,8 +30,44 @@ export async function middleware(request: NextRequest) {
 
         try {
             // Verify token
-            await verifyAccessToken(token);
-            // Token is valid, allow request
+            const payload = await verifyAccessToken(token);
+            const userRole = payload.role?.name || '';
+            
+            // RBAC Mapping
+            // ADMIN: all routes under /dashboard
+            // COCINERO: kitchen, recipes, menu
+            // BARTENDER: bartender
+            // MESERO: exact /dashboard and /dashboard/cashier
+            
+            let isAllowed = false;
+
+            if (userRole === 'ADMIN') {
+                isAllowed = true;
+            } else if (userRole === 'COCINERO') {
+                isAllowed = pathname.startsWith('/dashboard/kitchen') ||
+                            pathname.startsWith('/dashboard/recipes') ||
+                            pathname.startsWith('/dashboard/menu');
+            } else if (userRole === 'BARTENDER') {
+                isAllowed = pathname.startsWith('/dashboard/bartender');
+            } else if (userRole === 'MESERO') {
+                isAllowed = pathname === '/dashboard';
+            }
+
+            if (!isAllowed) {
+                // Redirect to their default allowed route
+                let redirectPath = '/login';
+                if (userRole === 'COCINERO') redirectPath = '/dashboard/kitchen';
+                else if (userRole === 'BARTENDER') redirectPath = '/dashboard/bartender';
+                else if (userRole === 'MESERO') redirectPath = '/dashboard';
+                else redirectPath = '/dashboard';
+
+                // Prevent infinite redirect loop if default path is somehow not matched above
+                if (pathname !== redirectPath) {
+                    return NextResponse.redirect(new URL(redirectPath, request.url));
+                }
+            }
+
+            // Token is valid and role is allowed, allow request
             return NextResponse.next();
         } catch (error) {
             // Token is invalid or expired, redirect to login

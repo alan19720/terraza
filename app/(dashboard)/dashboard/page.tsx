@@ -60,6 +60,7 @@ export default function DashboardPage() {
     const [newOrderOpen, setNewOrderOpen] = useState(false);
     const [orders, setOrders] = useState<OrderRow[]>([]);
     const [ordersLoading, setOrdersLoading] = useState(true);
+    const [totalTips, setTotalTips] = useState(0);
     const [selectedOrder, setSelectedOrder] = useState<OrderRow | null>(null);
     const [addItemsForOrderId, setAddItemsForOrderId] = useState<string | null>(null);
     const [tablesRefreshKey, setTablesRefreshKey] = useState(0);
@@ -117,6 +118,18 @@ export default function DashboardPage() {
         }
     }, []);
 
+    const fetchTips = useCallback(async () => {
+        try {
+            const res = await fetch(ORDER_ROUTES.TIPS_TODAY, { credentials: 'include' });
+            const data = await res.json();
+            if (data.success) {
+                setTotalTips(data.data.totalTips);
+            }
+        } catch {
+            // ignore
+        }
+    }, []);
+
     const refreshOrdersKeepSelection = useCallback(async () => {
         try {
             const res = await fetch(ORDER_ROUTES.LIST, { credentials: 'include' });
@@ -137,13 +150,15 @@ export default function DashboardPage() {
     useEffect(() => {
         if (!isLoading && user) {
             fetchOrders();
+            fetchTips();
             // Real-Time Synchronization via background polling
             const interval = setInterval(() => {
                 void refreshOrdersKeepSelection();
+                void fetchTips();
             }, 3000);
             return () => clearInterval(interval);
         }
-    }, [isLoading, user, fetchOrders, refreshOrdersKeepSelection]);
+    }, [isLoading, user, fetchOrders, refreshOrdersKeepSelection, fetchTips]);
 
     if (isLoading) {
         return (
@@ -196,133 +211,147 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    {stats.map((stat, idx) => (
-                        <div key={idx} className="bg-white rounded-xl p-4 border border-gray-100 hover:border-gray-200 transition-colors">
-                            <div className="flex items-center justify-between mb-3">
-                                <div className={`p-2 rounded-lg ${stat.bg}`}>
-                                    <stat.icon className={`w-4 h-4 ${stat.color}`} />
+                {isAdmin ? (
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        {stats.map((stat, idx) => (
+                            <div key={idx} className="bg-white rounded-xl p-4 border border-gray-100 hover:border-gray-200 transition-colors">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className={`p-2 rounded-lg ${stat.bg}`}>
+                                        <stat.icon className={`w-4 h-4 ${stat.color}`} />
+                                    </div>
                                 </div>
+                                <p className="text-2xl font-semibold text-gray-900 tracking-tight">{stat.value}</p>
+                                <p className="text-xs text-gray-400 mt-0.5">{stat.label}</p>
                             </div>
-                            <p className="text-2xl font-semibold text-gray-900 tracking-tight">{stat.value}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">{stat.label}</p>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                            <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-8 -mt-8"></div>
+                            <h2 className="text-emerald-100 font-medium text-sm mb-2 uppercase tracking-wide">Total de Propinas del Día</h2>
+                            <p className="text-4xl font-bold tracking-tight">
+                                ${totalTips.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                            </p>
                         </div>
-                    ))}
-                </div>
+                    </div>
+                )}
 
                 {/* Tables */}
-                {isAdmin && (
-                    <TablesPanel 
-                        refreshKey={tablesRefreshKey} 
-                        openOrders={openOrders} 
-                        onTableClick={(tableNumber) => {
-                            const order = openOrders.find(o => String(o.table.number) === String(tableNumber));
-                            if (order) setSelectedOrder(order);
-                        }}
-                    />
-                )}
+                <TablesPanel 
+                    refreshKey={tablesRefreshKey} 
+                    openOrders={openOrders} 
+                    onTableClick={(tableNumber) => {
+                        const order = openOrders.find(o => String(o.table.number) === String(tableNumber));
+                        if (order) setSelectedOrder(order);
+                    }}
+                />
 
                 {/* Orders table */}
                 <div className="bg-white rounded-xl border border-gray-100">
-                    <div className="px-5 py-4 flex items-center justify-between border-b border-gray-50">
-                        <h2 className="text-sm font-semibold text-gray-800">
-                            Órdenes de Hoy
-                            {orders.length > 0 && (
-                                <span className="ml-2 text-xs font-normal text-gray-400">({orders.length})</span>
-                            )}
-                        </h2>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                void fetchOrders().then(() => bumpTablesRefresh());
-                            }}
-                            disabled={ordersLoading}
-                            className="text-xs text-primary hover:text-primary/70 font-medium transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                        >
-                            <RefreshCw className={`w-3 h-3 ${ordersLoading ? 'animate-spin' : ''}`} />
-                            Actualizar
-                        </button>
-                    </div>
+                        <div className="px-5 py-4 flex items-center justify-between border-b border-gray-50">
+                            <h2 className="text-sm font-semibold text-gray-800">
+                                Órdenes de Hoy
+                                {orders.length > 0 && (
+                                    <span className="ml-2 text-xs font-normal text-gray-400">({orders.length})</span>
+                                )}
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    void fetchOrders().then(() => bumpTablesRefresh());
+                                }}
+                                disabled={ordersLoading}
+                                className="text-xs text-primary hover:text-primary/70 font-medium transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                            >
+                                <RefreshCw className={`w-3 h-3 ${ordersLoading ? 'animate-spin' : ''}`} />
+                                Actualizar
+                            </button>
+                        </div>
 
-                    {ordersLoading && orders.length === 0 ? (
-                        <div className="flex items-center justify-center py-12">
-                            <Loader2 className="w-6 h-6 text-gray-300 animate-spin" />
-                        </div>
-                    ) : orders.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-gray-300">
-                            <Utensils className="w-8 h-8 mb-2" />
-                            <p className="text-sm">No hay órdenes hoy</p>
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b border-gray-50">
-                                        <th className="text-left px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Mesa</th>
-                                        <th className="text-left px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Platillos</th>
-                                        {isAdmin && (
-                                            <th className="text-left px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Mesero</th>
-                                        )}
-                                        <th className="text-left px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Estado</th>
-                                        <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Total</th>
-                                        <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Hora</th>
-                                        <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-50">
-                                    {orders.map((order) => {
-                                        const cfg = STATUS_CONFIG[order.status] ?? STATUS_CONFIG[OrderStatus.OPEN];
-                                        const StatusIcon = cfg.icon;
-                                        const mealSummary = order.orderDetails
-                                            .map((d) => `${d.quantity}× ${d.meal.name}`)
-                                            .join(', ');
-                                        return (
-                                            <tr key={order.id} onClick={() => setSelectedOrder(order)} className="hover:bg-gray-50/50 transition-colors cursor-pointer">
-                                                <td className="px-5 py-3">
-                                                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary/5 text-primary font-semibold text-sm">
-                                                        {order.table.number}
-                                                    </span>
-                                                </td>
-                                                <td className="px-5 py-3 max-w-[280px]">
-                                                    <p className="text-gray-700 truncate" title={mealSummary}>
-                                                        {mealSummary}
-                                                    </p>
-                                                </td>
-                                                {isAdmin && (
-                                                    <td className="px-5 py-3 text-gray-600">{order.user.name}</td>
-                                                )}
-                                                <td className="px-5 py-3">
-                                                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${cfg.bg} ${cfg.color}`}>
-                                                        <StatusIcon className="w-3 h-3" />
-                                                        {cfg.label}
-                                                    </span>
-                                                </td>
-                                                <td className="px-5 py-3 text-right font-semibold text-gray-800">
-                                                    ${Number(order.total).toLocaleString()}
-                                                </td>
-                                                <td className="px-5 py-3 text-right text-gray-400">
-                                                    {formatTime(order.createdAt)}
-                                                </td>
-                                                <td className="px-5 py-3 text-right">
-                                                    {order.status === OrderStatus.CLOSED && order.payments && order.payments.length > 0 && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => handleReprint(e, order)}
-                                                            title="Reimprimir Ticket"
-                                                            className="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors inline-flex"
-                                                        >
-                                                            <Printer className="w-4 h-4" />
-                                                        </button>
+                        {ordersLoading && orders.length === 0 ? (
+                            <div className="flex items-center justify-center py-12">
+                                <Loader2 className="w-6 h-6 text-gray-300 animate-spin" />
+                            </div>
+                        ) : orders.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-12 text-gray-300">
+                                <Utensils className="w-8 h-8 mb-2" />
+                                <p className="text-sm">No hay órdenes hoy</p>
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="border-b border-gray-50">
+                                            <th className="text-left px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Mesa</th>
+                                            <th className="text-left px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Platillos</th>
+                                            {isAdmin && (
+                                                <th className="text-left px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Mesero</th>
+                                            )}
+                                            <th className="text-left px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Estado</th>
+                                            {isAdmin && (
+                                                <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Total</th>
+                                            )}
+                                            <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Hora</th>
+                                            <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {orders.map((order) => {
+                                            const cfg = STATUS_CONFIG[order.status] ?? STATUS_CONFIG[OrderStatus.OPEN];
+                                            const StatusIcon = cfg.icon;
+                                            const mealSummary = order.orderDetails
+                                                .map((d) => `${d.quantity}× ${d.meal.name}`)
+                                                .join(', ');
+                                            return (
+                                                <tr key={order.id} onClick={() => setSelectedOrder(order)} className="hover:bg-gray-50/50 transition-colors cursor-pointer">
+                                                    <td className="px-5 py-3">
+                                                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary/5 text-primary font-semibold text-sm">
+                                                            {order.table.number}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-5 py-3 max-w-[280px]">
+                                                        <p className="text-gray-700 truncate" title={mealSummary}>
+                                                            {mealSummary}
+                                                        </p>
+                                                    </td>
+                                                    {isAdmin && (
+                                                        <td className="px-5 py-3 text-gray-600">{order.user.name}</td>
                                                     )}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
+                                                    <td className="px-5 py-3">
+                                                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${cfg.bg} ${cfg.color}`}>
+                                                            <StatusIcon className="w-3 h-3" />
+                                                            {cfg.label}
+                                                        </span>
+                                                    </td>
+                                                    {isAdmin && (
+                                                        <td className="px-5 py-3 text-right font-semibold text-gray-800">
+                                                            ${Number(order.total).toLocaleString()}
+                                                        </td>
+                                                    )}
+                                                    <td className="px-5 py-3 text-right text-gray-400">
+                                                        {formatTime(order.createdAt)}
+                                                    </td>
+                                                    <td className="px-5 py-3 text-right">
+                                                        {order.status === OrderStatus.CLOSED && order.payments && order.payments.length > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => handleReprint(e, order)}
+                                                                title="Reimprimir Ticket"
+                                                                className="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors inline-flex"
+                                                            >
+                                                                <Printer className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
             </div>
 
             <NewOrderModal

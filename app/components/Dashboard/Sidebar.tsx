@@ -19,18 +19,20 @@ import {
     GlassWater
 } from 'lucide-react';
 
+import { useAuth } from '@/app/contexts/AuthContext';
+
 const menuItems = [
-    { icon: LayoutDashboard, label: 'Panel', href: '/dashboard' },
-    { icon: UtensilsCrossed, label: 'Mesas / Venta', href: '/dashboard/service' },
-    { icon: ChefHat, label: 'Cocina', href: '/dashboard/kitchen' },
-    { icon: GlassWater, label: 'Barra', href: '/dashboard/bartender' },
-    { icon: Wallet, label: 'Caja', href: '/dashboard/cashier' },
-    { icon: Package, label: 'Inventario', href: '/dashboard/inventory' },
-    { icon: ClipboardList, label: 'Recetario', href: '/dashboard/recipes' },
-    { icon: BookOpen, label: 'Menú', href: '/dashboard/menu' },
-    { icon: LayoutGrid, label: 'Mesas', href: '/dashboard/tables' },
-    { icon: BarChart3, label: 'Reportes', href: '/dashboard/reports' },
-    { icon: Users, label: 'Usuarios', href: '/dashboard/users' },
+    { icon: LayoutDashboard, label: 'Panel', href: '/dashboard', roles: ['ADMIN', 'MESERO'] },
+    { icon: UtensilsCrossed, label: 'Mesas / Venta', href: '/dashboard/service', roles: ['ADMIN'] },
+    { icon: ChefHat, label: 'Cocina', href: '/dashboard/kitchen', roles: ['ADMIN', 'COCINERO'] },
+    { icon: GlassWater, label: 'Barra', href: '/dashboard/bartender', roles: ['ADMIN', 'BARTENDER'] },
+    { icon: Wallet, label: 'Caja', href: '/dashboard/cashier', roles: ['ADMIN'] },
+    { icon: Package, label: 'Inventario', href: '/dashboard/inventory', roles: ['ADMIN'] },
+    { icon: ClipboardList, label: 'Recetario', href: '/dashboard/recipes', roles: ['ADMIN', 'COCINERO'] },
+    { icon: BookOpen, label: 'Menú', href: '/dashboard/menu', roles: ['ADMIN', 'COCINERO'] },
+    { icon: LayoutGrid, label: 'Mesas', href: '/dashboard/tables', roles: ['ADMIN'] },
+    { icon: BarChart3, label: 'Reportes', href: '/dashboard/reports', roles: ['ADMIN'] },
+    { icon: Users, label: 'Usuarios', href: '/dashboard/users', roles: ['ADMIN'] },
 ];
 
 type Props = {
@@ -40,6 +42,12 @@ type Props = {
 
 export default function Sidebar({ mobileOpen, onMobileClose }: Props) {
     const pathname = usePathname();
+    const { user } = useAuth();
+    const userRole = user?.role?.name || '';
+    
+    const visibleMenuItems = menuItems.filter(item => 
+        !item.roles || item.roles.includes(userRole)
+    );
 
     const sidebarContent = (
         <>
@@ -62,7 +70,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }: Props) {
 
             {/* Navigation */}
             <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-                {menuItems.map((item) => {
+                {visibleMenuItems.map((item) => {
                     const isActive = pathname === item.href;
                     return (
                         <Link
@@ -82,17 +90,19 @@ export default function Sidebar({ mobileOpen, onMobileClose }: Props) {
             </nav>
 
             {/* Settings */}
-            <div className="px-3 pb-4">
-                <div className="h-px bg-gray-100 mb-2" />
-                <Link
-                    href="/dashboard/settings"
-                    onClick={onMobileClose}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-all group"
-                >
-                    <Settings className="w-[18px] h-[18px]" />
-                    <span className="text-[13px] font-medium">Ajustes</span>
-                </Link>
-            </div>
+            {userRole === 'ADMIN' && (
+                <div className="px-3 pb-4">
+                    <div className="h-px bg-gray-100 mb-2" />
+                    <Link
+                        href="/dashboard/settings"
+                        onClick={onMobileClose}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-all group"
+                    >
+                        <Settings className="w-[18px] h-[18px]" />
+                        <span className="text-[13px] font-medium">Ajustes</span>
+                    </Link>
+                </div>
+            )}
         </>
     );
 

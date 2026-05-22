@@ -6,7 +6,7 @@ import { TokenPayload, AuthTokens } from '@/lib/types/auth.types';
  * Token expiration times
  */
 const ACCESS_TOKEN_EXPIRY = '1h'; // 1 hour
-const REFRESH_TOKEN_EXPIRY = '7d'; // 7 days
+const REFRESH_TOKEN_EXPIRY = '30d'; // 30 days
 
 // Encode the secret key once
 const secret = new TextEncoder().encode(JWT_SIGNING_KEY);
