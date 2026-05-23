@@ -255,11 +255,13 @@ export default function ReceiptModal({ open, result, onClose }: Props) {
                 {/* Header */}
                 <div className="px-5 py-4 flex items-center justify-between border-b border-gray-100 shrink-0">
                     <div className="flex items-center gap-3">
-                        <span className="p-2 rounded-xl bg-emerald-50">
-                            <CircleCheck className="w-5 h-5 text-emerald-600" />
+                        <span className={`p-2 rounded-xl ${result.payment.id === 'PRE-CUENTA' ? 'bg-amber-50' : 'bg-emerald-50'}`}>
+                            <CircleCheck className={`w-5 h-5 ${result.payment.id === 'PRE-CUENTA' ? 'text-amber-600' : 'text-emerald-600'}`} />
                         </span>
                         <div>
-                            <h2 className="text-sm font-semibold text-gray-900">¡Pago registrado!</h2>
+                            <h2 className="text-sm font-semibold text-gray-900">
+                                {result.payment.id === 'PRE-CUENTA' ? 'PRE-CUENTA (PAGO PENDIENTE)' : '¡Pago registrado!'}
+                            </h2>
                             <p className="text-xs text-gray-400">Mesa {result.orderSnapshot.table.number}</p>
                         </div>
                     </div>

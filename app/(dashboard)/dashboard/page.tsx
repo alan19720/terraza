@@ -22,6 +22,7 @@ import {
     CircleCheck,
     CircleX,
     Printer,
+    Pencil,
 } from 'lucide-react';
 
 type OrderRow = {
@@ -94,6 +95,29 @@ export default function DashboardPage() {
     };
 
     const isAdmin = user?.role?.name === 'ADMIN';
+
+    const handleReopenOrder = async (e: React.MouseEvent, order: OrderRow) => {
+        e.stopPropagation();
+        const ok = window.confirm('¿Seguro que deseas reabrir la cuenta? Esto borrará el pago registrado y volverá a ocupar la mesa.');
+        if (!ok) return;
+
+        try {
+            const res = await fetch(ORDER_ROUTES.REOPEN(order.id), {
+                method: 'POST',
+                credentials: 'include',
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                alert(data.error ?? 'Error al reabrir la orden');
+                return;
+            }
+            await fetchOrders();
+            bumpTablesRefresh();
+            setAddItemsForOrderId(order.id);
+        } catch {
+            alert('Error de red al reabrir la orden');
+        }
+    };
 
     const bumpTablesRefresh = useCallback(() => {
         setTablesRefreshKey((k) => k + 1);
@@ -333,15 +357,29 @@ export default function DashboardPage() {
                                                         {formatTime(order.createdAt)}
                                                     </td>
                                                     <td className="px-5 py-3 text-right">
-                                                        {order.status === OrderStatus.CLOSED && order.payments && order.payments.length > 0 && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={(e) => handleReprint(e, order)}
-                                                                title="Reimprimir Ticket"
-                                                                className="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors inline-flex"
-                                                            >
-                                                                <Printer className="w-4 h-4" />
-                                                            </button>
+                                                        {order.status === OrderStatus.CLOSED && (
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                {(isAdmin || order.user.id === user?.id) && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={(e) => handleReopenOrder(e, order)}
+                                                                        title="Reabrir Cuenta (Editar)"
+                                                                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-flex"
+                                                                    >
+                                                                        <Pencil className="w-4 h-4" />
+                                                                    </button>
+                                                                )}
+                                                                {order.payments && order.payments.length > 0 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={(e) => handleReprint(e, order)}
+                                                                        title="Reimprimir Ticket"
+                                                                        className="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors inline-flex"
+                                                                    >
+                                                                        <Printer className="w-4 h-4" />
+                                                                    </button>
+                                                                )}
+                                                            </div>
                                                         )}
                                                     </td>
                                                 </tr>

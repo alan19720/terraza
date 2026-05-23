@@ -14,6 +14,7 @@ import {
     Loader2,
     Receipt,
     Trash2,
+    Printer,
 } from 'lucide-react';
 import { OrderStatus, KitchenStatus } from '@prisma/client';
 import { ORDER_ROUTES } from '@/lib/config/routes';
@@ -137,11 +138,41 @@ export default function OrderDetailModal({
         onOrderUpdated?.(); // refresh orders list in background
     };
 
+    /* ── Pre-Cuenta Logic ── */
+    const handlePrintPreCuenta = () => {
+        const orderSnapshot = {
+            id: order.id,
+            table: { number: order.table.number },
+            orderDetails: order.orderDetails.map(d => ({
+                quantity: d.quantity,
+                unitPrice: d.unitPrice,
+                meal: { name: d.meal.name },
+            })),
+        };
+        const dummyPayment = {
+            id: 'PRE-CUENTA',
+            amount: Number(order.total),
+            discountPercent: 0,
+            tipAmount: 0,
+            totalCharged: Number(order.total),
+        };
+        setReceiptResult({
+            payment: dummyPayment,
+            order: { id: order.id, status: order.status },
+            orderSnapshot,
+            paymentMethod: 'PENDIENTE',
+        });
+        setReceiptOpen(true);
+    };
+
     /* ── After receipt is closed ── */
     const handleReceiptClose = () => {
+        const isPreCuenta = receiptResult?.payment.id === 'PRE-CUENTA';
         setReceiptOpen(false);
         setReceiptResult(null);
-        onClose(); // close the OrderDetailModal too
+        if (!isPreCuenta) {
+            onClose(); // close the OrderDetailModal only if it was an actual payment
+        }
     };
 
     const cfg = STATUS_CONFIG[order.status] ?? STATUS_CONFIG[OrderStatus.OPEN];
@@ -263,17 +294,27 @@ export default function OrderDetailModal({
                         )}
 
                         {canManageOrder && order.status === OrderStatus.OPEN && (
-                            <div className="grid grid-cols-2 gap-2">
-                                {/* ── Checkout button (replaces old "Cerrar orden") ── */}
-                                <button
-                                    id="open-checkout-btn"
-                                    type="button"
-                                    onClick={() => setCheckoutOpen(true)}
-                                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 cursor-pointer transition-colors"
-                                >
-                                    <Receipt className="w-4 h-4" />
-                                    Cobrar
-                                </button>
+                            <div className="flex flex-col gap-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={handlePrintPreCuenta}
+                                        className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 cursor-pointer transition-colors"
+                                    >
+                                        <Printer className="w-4 h-4" />
+                                        Imprimir Cuenta
+                                    </button>
+
+                                    <button
+                                        id="open-checkout-btn"
+                                        type="button"
+                                        onClick={() => setCheckoutOpen(true)}
+                                        className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 cursor-pointer transition-colors"
+                                    >
+                                        <Receipt className="w-4 h-4" />
+                                        Pagar y Cerrar
+                                    </button>
+                                </div>
 
                                 <button
                                     type="button"
@@ -286,7 +327,7 @@ export default function OrderDetailModal({
                                     ) : (
                                         <CircleX className="w-4 h-4" />
                                     )}
-                                    Cancelar
+                                    Cancelar Orden
                                 </button>
                             </div>
                         )}
