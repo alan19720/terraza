@@ -13,6 +13,7 @@ import {
     PlusCircle,
     Loader2,
     Receipt,
+    Trash2,
 } from 'lucide-react';
 import { OrderStatus, KitchenStatus } from '@prisma/client';
 import { ORDER_ROUTES } from '@/lib/config/routes';
@@ -104,6 +105,30 @@ export default function OrderDetailModal({
         }
     };
 
+    /* ── Delete Item ── */
+    const deleteItem = async (itemId: string) => {
+        const ok = window.confirm('¿Seguro que deseas eliminar este platillo de la orden?');
+        if (!ok) return;
+        setActionLoading('cancel');
+        try {
+            const res = await fetch(ORDER_ROUTES.REMOVE_ITEM(order.id, itemId), {
+                method: 'DELETE',
+                credentials: 'include',
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                alert(data.error ?? 'No se pudo eliminar el platillo');
+                return;
+            }
+            onOrderUpdated?.();
+            // We don't close the modal, we just let it refresh the data
+        } catch {
+            alert('Error de red al eliminar platillo');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
     /* ── After CheckoutModal confirms payment ── */
     const handleCheckoutSuccess = (result: CheckoutResult) => {
         setCheckoutOpen(false);
@@ -190,9 +215,21 @@ export default function OrderDetailModal({
                                                     <p className="text-xs text-gray-400">${Number(detail.unitPrice).toFixed(0)} c/u</p>
                                                 </div>
                                             </div>
-                                            <span className="text-sm font-semibold text-gray-700 shrink-0 ml-3">
-                                                ${subtotal.toFixed(0)}
-                                            </span>
+                                            <div className="flex items-center gap-3 shrink-0 ml-3">
+                                                <span className="text-sm font-semibold text-gray-700">
+                                                    ${subtotal.toFixed(0)}
+                                                </span>
+                                                {canManageOrder && order.status === OrderStatus.OPEN && detail.id && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => deleteItem(detail.id!)}
+                                                        className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                                        title="Eliminar platillo"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="mt-2 flex items-center gap-2 flex-wrap">
                                             <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium ${kitchen.bg} ${kitchen.color}`}>

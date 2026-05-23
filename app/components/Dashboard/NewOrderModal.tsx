@@ -43,8 +43,7 @@ export default function NewOrderModal({ open, onClose, onSuccess }: Props) {
 
     useEffect(() => {
         if (open && tables.length > 0 && !tableId) {
-            const available = tables.filter((t: Table) => t.status === TableStatus.AVAILABLE);
-            if (available.length) setTableId(available[0].id);
+            if (tables.length) setTableId(tables[0].id);
         }
     }, [open, tables, tableId]);
 
@@ -134,14 +133,12 @@ export default function NewOrderModal({ open, onClose, onSuccess }: Props) {
                                 onChange={(e) => setTableId(e.target.value)}
                                 className="h-8 rounded-lg border border-gray-200 px-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-gray-50"
                             >
-                                {tables
-                                    .filter((t) => t.status === TableStatus.AVAILABLE)
-                                    .map((t) => (
+                                {tables.map((t) => (
                                         <option key={t.id} value={t.id}>
-                                            {t.number}
+                                            {t.number} {t.status === TableStatus.OCCUPIED ? '(Ocupada)' : ''}
                                         </option>
                                     ))}
-                                {tables.filter((t) => t.status === TableStatus.AVAILABLE).length === 0 && (
+                                {tables.length === 0 && (
                                     <option value="">Sin mesas</option>
                                 )}
                             </select>
@@ -334,6 +331,8 @@ export default function NewOrderModal({ open, onClose, onSuccess }: Props) {
                                 >
                                     {submitting ? (
                                         <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : tables.find((t) => t.id === tableId)?.status === TableStatus.OCCUPIED ? (
+                                        'Agregar a la orden'
                                     ) : (
                                         'Crear orden'
                                     )}

@@ -60,22 +60,45 @@ export const POST = withAuth(async (request, user) => {
             };
         });
 
-        const total = orderDetails.reduce(
+        const addedTotal = orderDetails.reduce(
             (sum, d) => sum + Number(d.unitPrice) * d.quantity,
             0
         );
 
-        const [order] = await prisma.$transaction([
-            prisma.order.create({
-                data: {
-                    tableId,
-                    userId: user.userId,
-                    status: OrderStatus.OPEN,
-                    total,
-                    orderDetails: {
-                        create: orderDetails,
-                    },
-                },
+        const existingOrder = await prisma.order.findFirst({
+            where: { tableId, status: OrderStatus.OPEN },
+        });
+
+        let resultOrder;
+
+        if (existingOrder) {
+            // Append to existing order
+            const rows = orderDetails.map((d) => ({
+                orderId: existingOrder.id,
+                mealId: d.mealId,
+                quantity: d.quantity,
+                unitPrice: d.unitPrice,
+                kitchenNotes: d.kitchenNotes,
+            }));
+
+            await prisma.$transaction(async (tx) => {
+                await tx.orderDetail.createMany({ data: rows });
+                const allDetails = await tx.orderDetail.findMany({
+                    where: { orderId: existingOrder.id },
+                    select: { quantity: true, unitPrice: true },
+                });
+                const newTotal = allDetails.reduce(
+                    (s: number, d: any) => s + Number(d.unitPrice) * d.quantity,
+                    0
+                );
+                await tx.order.update({
+                    where: { id: existingOrder.id },
+                    data: { total: newTotal },
+                });
+            });
+
+            resultOrder = await prisma.order.findUnique({
+                where: { id: existingOrder.id },
                 include: {
                     table: { select: { number: true } },
                     orderDetails: {
@@ -84,16 +107,40 @@ export const POST = withAuth(async (request, user) => {
                         },
                     },
                 },
-            }),
-            prisma.table.update({
-                where: { id: tableId },
-                data: { status: TableStatus.OCCUPIED },
-            }),
-        ]);
+            });
+        } else {
+            // Create brand new order
+            const [order] = await prisma.$transaction([
+                prisma.order.create({
+                    data: {
+                        tableId,
+                        userId: user.userId,
+                        status: OrderStatus.OPEN,
+                        total: addedTotal,
+                        orderDetails: {
+                            create: orderDetails,
+                        },
+                    },
+                    include: {
+                        table: { select: { number: true } },
+                        orderDetails: {
+                            include: {
+                                meal: { select: { name: true, price: true } },
+                            },
+                        },
+                    },
+                }),
+                prisma.table.update({
+                    where: { id: tableId },
+                    data: { status: TableStatus.OCCUPIED },
+                }),
+            ]);
+            resultOrder = order;
+        }
 
         return successResponse(
-            { order: { id: order.id, table: order.table.number, total: order.total, orderDetails: order.orderDetails } },
-            'Order created'
+            { order: { id: resultOrder!.id, table: resultOrder!.table.number, total: resultOrder!.total, orderDetails: resultOrder!.orderDetails } },
+            'Order created or updated'
         );
     } catch (e) {
         console.error('POST /api/orders/create:', e);

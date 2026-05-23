@@ -81,6 +81,7 @@ export const ORDER_ROUTES = {
     UPDATE: (id: string) => `${API_BASE}/orders/${id}`,
     UPDATE_STATUS: (id: string) => `${API_BASE}/orders/${id}/status`,
     ADD_ITEMS: (id: string) => `${API_BASE}/orders/${id}/items`,
+    REMOVE_ITEM: (orderId: string, itemId: string) => `${API_BASE}/orders/${orderId}/items/${itemId}`,
     CHECKOUT: (id: string) => `${API_BASE}/orders/${id}/checkout`,
     TIPS_TODAY: `${API_BASE}/orders/tips-today`,
 } as const;
