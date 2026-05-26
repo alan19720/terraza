@@ -86,55 +86,14 @@
 
 /* ─── Thermal POS Printer — 80mm receipt ─────────────────────────── */
 @media print {
-  /* Hide the entire page UI */
-  body > * {
-    display: none !important;
-  }
-
-  /* Show only the thermal receipt */
-  .print-receipt-wrapper {
-    display: block !important;
-    position: fixed;
-    inset: 0;
-    background: #fff;
-    z-index: 9999;
-  }
-
-  /* 80mm paper width — printable area ≈ 72mm */
-  .receipt-content {
-    width: 72mm;
-    max-width: 72mm;
-    margin: 0 auto;
-    padding: 2mm 1mm;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 10pt;
-    line-height: 1.3;
-    color: #000 !important;
-    background: #fff !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  /* Force black text everywhere */
-  .receipt-content * {
-    color: #000 !important;
-    background: transparent !important;
-  }
-
-  /* Remove browser default print margins */
   @page {
     size: 80mm auto;
-    margin: 2mm 4mm;
+    margin: 0;
   }
-
-  /* Hide on-screen overlays during print */
-  .print\:hidden {
-    display: none !important;
-  }
-
-  /* Show print-only elements */
-  .print\:block {
-    display: block !important;
+  
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    background-color: white !important;
   }
 }
-

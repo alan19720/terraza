@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef } from 'react';
-import { Printer, X, CircleCheck } from 'lucide-react';
+import { useState } from 'react';
+import { Printer, X, CircleCheck, Loader2 } from 'lucide-react';
 import type { CheckoutResult } from './CheckoutModal';
 
 /* ────────────────────── Types ────────────────────── */
@@ -29,103 +29,6 @@ const PAYMENT_LABELS: Record<string, string> = {
     TRANSFER: 'Transferencia',
 };
 
-/* ────────────────────── Iframe-based thermal print (blank-page fix) ────────────────────── */
-
-/**
- * Renders the receipt HTML into a hidden iframe and prints it.
- * This is the proven approach for thermal printers — avoids the blank-page
- * bug caused by CSS `print:` variants not reliably hiding/showing DOM.
- */
-function printReceiptViaIframe(containerRef: React.RefObject<HTMLDivElement | null>) {
-    const html = containerRef.current?.innerHTML;
-    if (!html) return;
-
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.left = '-9999px';
-    iframe.style.top = '-9999px';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
-    if (!doc) { document.body.removeChild(iframe); return; }
-
-    doc.open();
-    doc.write(`<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8"/>
-<title>Ticket</title>
-<style>
-  @page { size: 80mm auto; margin: 2mm 4mm; }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 10pt;
-    line-height: 1.3;
-    color: #000;
-    background: #fff;
-    width: 72mm;
-    max-width: 72mm;
-    margin: 0 auto;
-    padding: 2mm 1mm;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { padding: 1px 0; }
-  .text-center { text-align: center; }
-  .text-right { text-align: right; }
-  .text-left { text-align: left; }
-  .font-bold { font-weight: 700; }
-  .font-black { font-weight: 900; }
-  .font-semibold { font-weight: 600; }
-  .font-medium { font-weight: 500; }
-  .text-xs { font-size: 9pt; }
-  .text-sm { font-size: 10pt; }
-  .text-base { font-size: 11pt; }
-  .text-lg { font-size: 13pt; }
-  .text-tiny { font-size: 7pt; }
-  .uppercase { text-transform: uppercase; }
-  .tracking-widest { letter-spacing: 0.1em; }
-  .tracking-wide { letter-spacing: 0.05em; }
-  .tracking-tight { letter-spacing: -0.025em; }
-  .leading-tight { line-height: 1.15; }
-  .mt-1 { margin-top: 3px; }
-  .mt-2 { margin-top: 6px; }
-  .mb-2 { margin-bottom: 6px; }
-  .mb-3 { margin-bottom: 8px; }
-  .pb-3 { padding-bottom: 8px; }
-  .pt-1 { padding-top: 3px; }
-  .py-1 { padding-top: 2px; padding-bottom: 2px; }
-  .pr-1 { padding-right: 3px; }
-  .space-y-1 > * + * { margin-top: 3px; }
-  .space-y-half > * + * { margin-top: 2px; }
-  .border-b-dashed { border-bottom: 1px dashed #000; }
-  .border-b-solid { border-bottom: 1px solid #000; }
-  .border-b-thick { border-bottom: 2px solid #000; }
-  .border-t-solid { border-top: 1px solid #000; }
-  .border-t-thick { border-top: 2px solid #000; }
-  .flex { display: flex; }
-  .justify-between { justify-content: space-between; }
-  .w-8 { width: 28px; }
-</style>
-</head>
-<body>${html}</body>
-</html>`);
-    doc.close();
-
-    iframe.onload = () => {
-        setTimeout(() => {
-            iframe.contentWindow?.focus();
-            iframe.contentWindow?.print();
-            // Remove iframe after a brief delay so print dialog stays open
-            setTimeout(() => document.body.removeChild(iframe), 1000);
-        }, 250);
-    };
-}
-
 /* ────────────────────── Receipt content ────────────────────── */
 function ReceiptContent({ result }: { result: CheckoutResult }) {
     const { payment, order, orderSnapshot, paymentMethod } = result;
@@ -142,7 +45,7 @@ function ReceiptContent({ result }: { result: CheckoutResult }) {
     return (
         <>
             {/* ── Header ── */}
-            <div className="text-center border-b-dashed pb-3 mb-3">
+            <div className="text-center border-b border-dashed border-black pb-3 mb-3">
                 <p className="text-xs tracking-widest uppercase">Bienvenido a</p>
                 <h1 className="text-lg font-black uppercase tracking-tight leading-tight">
                     Terraza Huetameña
@@ -158,26 +61,26 @@ function ReceiptContent({ result }: { result: CheckoutResult }) {
             </div>
 
             {/* ── Items ── */}
-            <div className="border-b-dashed pb-3 mb-3">
-                <p className="text-tiny uppercase tracking-widest mb-2">
+            <div className="border-b border-dashed border-black pb-3 mb-3">
+                <p className="text-[10px] uppercase tracking-widest mb-2 text-center">
                     Detalle de consumo
                 </p>
-                <table>
+                <table className="w-full text-xs">
                     <thead>
-                        <tr className="border-b-solid">
-                            <th className="text-left py-1 font-semibold text-xs">Platillo</th>
-                            <th className="text-center py-1 font-semibold text-xs w-8">Cant</th>
-                            <th className="text-right py-1 font-semibold text-xs">P.U.</th>
-                            <th className="text-right py-1 font-semibold text-xs">Importe</th>
+                        <tr className="border-b border-solid border-black">
+                            <th className="text-left py-1 font-semibold">Platillo</th>
+                            <th className="text-center py-1 font-semibold w-8">Cant</th>
+                            <th className="text-right py-1 font-semibold">P.U.</th>
+                            <th className="text-right py-1 font-semibold">Importe</th>
                         </tr>
                     </thead>
                     <tbody>
                         {orderSnapshot.orderDetails.map((d, i) => (
-                            <tr key={i} className="border-b-solid">
-                                <td className="py-1 pr-1 leading-tight text-xs">{d.meal.name}</td>
-                                <td className="py-1 text-center text-xs">{d.quantity}</td>
-                                <td className="py-1 text-right text-xs">{fmt(Number(d.unitPrice))}</td>
-                                <td className="py-1 text-right font-medium text-xs">
+                            <tr key={i} className="border-b border-solid border-black">
+                                <td className="py-1 pr-1 leading-tight">{d.meal.name}</td>
+                                <td className="py-1 text-center">{d.quantity}</td>
+                                <td className="py-1 text-right">{fmt(Number(d.unitPrice))}</td>
+                                <td className="py-1 text-right font-medium">
                                     {fmt(Number(d.unitPrice) * d.quantity)}
                                 </td>
                             </tr>
@@ -187,7 +90,7 @@ function ReceiptContent({ result }: { result: CheckoutResult }) {
             </div>
 
             {/* ── Financial breakdown ── */}
-            <div className="space-y-1 border-b-dashed pb-3 mb-3 text-xs">
+            <div className="space-y-1 border-b border-dashed border-black pb-3 mb-3 text-xs">
                 <div className="flex justify-between">
                     <span>Subtotal</span>
                     <span>{fmt(grossTotal)}</span>
@@ -212,23 +115,23 @@ function ReceiptContent({ result }: { result: CheckoutResult }) {
                         <span>+ {fmt(payment.tipAmount)}</span>
                     </div>
                 )}
-                <div className="flex justify-between font-black text-base pt-1 border-t-thick">
+                <div className="flex justify-between font-black text-base pt-1 border-t-[2px] border-solid border-black">
                     <span>Total Final</span>
                     <span>{fmt(payment.totalCharged)}</span>
                 </div>
             </div>
 
             {/* ── Payment method ── */}
-            <div className="text-xs text-center border-b-dashed pb-3 mb-3">
+            <div className="text-xs text-center border-b border-dashed border-black pb-3 mb-3">
                 <span>Forma de pago: </span>
-                <strong>{PAYMENT_LABELS[paymentMethod] ?? 'Efectivo'}</strong>
+                <strong className="uppercase">{PAYMENT_LABELS[paymentMethod] ?? 'Efectivo'}</strong>
             </div>
 
             {/* ── Footer ── */}
-            <div className="text-center text-tiny space-y-half">
+            <div className="text-center text-[10px] space-y-1">
                 <p>¡Gracias por su preferencia!</p>
                 <p>Vuelva pronto 🦞</p>
-                <p className="mt-1 text-tiny tracking-wide uppercase">
+                <p className="mt-1 text-[9px] tracking-wide uppercase">
                     Precios incluyen IVA · Este ticket no es CFDI
                 </p>
             </div>
@@ -238,22 +141,34 @@ function ReceiptContent({ result }: { result: CheckoutResult }) {
 
 /* ────────────────────── Main Modal ────────────────────── */
 export default function ReceiptModal({ open, result, onClose }: Props) {
-    const receiptRef = useRef<HTMLDivElement>(null);
+    const [isPrinting, setIsPrinting] = useState(false);
 
     if (!open || !result) return null;
 
-    const handlePrint = () => printReceiptViaIframe(receiptRef);
+    const handlePrint = () => {
+        setIsPrinting(true);
+        // Ensure browser paints the Tailwind @media print classes before triggering the spooler
+        setTimeout(() => {
+            window.print();
+            
+            // Clean up state roughly after print dialog is handled
+            setTimeout(() => {
+                setIsPrinting(false);
+            }, 500);
+        }, 500);
+    };
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className={`fixed inset-0 z-[60] flex items-center justify-center p-4 ${isPrinting ? 'print:block print:absolute print:inset-0 print:p-0 print:m-0 print:bg-white print:overflow-visible' : 'print:hidden'}`}>
             <div
-                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-                onClick={onClose}
+                className="absolute inset-0 bg-black/50 backdrop-blur-sm print:hidden"
+                onClick={isPrinting ? undefined : onClose}
             />
 
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col max-h-[92vh]">
+            <div className={`relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col max-h-[92vh] ${isPrinting ? 'print:block print:absolute print:top-0 print:left-0 print:w-[80mm] print:m-0 print:p-0 print:max-w-none print:max-h-none print:shadow-none print:rounded-none print:border-none print:overflow-visible' : ''}`}>
+                
                 {/* Header */}
-                <div className="px-5 py-4 flex items-center justify-between border-b border-gray-100 shrink-0">
+                <div className="px-5 py-4 flex items-center justify-between border-b border-gray-100 shrink-0 print:hidden">
                     <div className="flex items-center gap-3">
                         <span className={`p-2 rounded-xl ${result.payment.id === 'PRE-CUENTA' ? 'bg-amber-50' : 'bg-emerald-50'}`}>
                             <CircleCheck className={`w-5 h-5 ${result.payment.id === 'PRE-CUENTA' ? 'text-amber-600' : 'text-emerald-600'}`} />
@@ -266,35 +181,41 @@ export default function ReceiptModal({ open, result, onClose }: Props) {
                         </div>
                     </div>
                     <button
-                        id="receipt-close-btn"
                         type="button"
                         onClick={onClose}
-                        className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                        disabled={isPrinting}
+                        className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer disabled:opacity-50"
                     >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 {/* Scrollable ticket preview */}
-                <div className="flex-1 overflow-y-auto px-4 py-4">
-                    <div
-                        ref={receiptRef}
-                        className="border border-dashed border-gray-300 rounded-xl p-4 bg-gray-50 font-mono text-black"
-                    >
+                <div className={`flex-1 overflow-y-auto px-4 py-4 ${isPrinting ? 'print:block print:p-0 print:overflow-visible' : ''}`}>
+                    <div className={`border border-dashed border-gray-300 rounded-xl p-4 bg-gray-50 font-mono text-black ${isPrinting ? 'print:block print:border-none print:p-0 print:m-0 print:bg-white print:text-black print:overflow-visible' : ''}`}>
                         <ReceiptContent result={result} />
                     </div>
                 </div>
 
                 {/* Print button */}
-                <div className="px-5 pb-5 pt-3 shrink-0 border-t border-gray-100">
+                <div className="px-5 pb-5 pt-3 shrink-0 border-t border-gray-100 print:hidden">
                     <button
-                        id="print-receipt-btn"
                         type="button"
                         onClick={handlePrint}
-                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-all shadow-sm hover:shadow-md cursor-pointer"
+                        disabled={isPrinting}
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-all shadow-sm hover:shadow-md cursor-pointer disabled:bg-primary/70"
                     >
-                        <Printer className="w-4 h-4" />
-                        Imprimir Ticket
+                        {isPrinting ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Abriendo visor...
+                            </>
+                        ) : (
+                            <>
+                                <Printer className="w-4 h-4" />
+                                Imprimir Ticket
+                            </>
+                        )}
                     </button>
                 </div>
             </div>
