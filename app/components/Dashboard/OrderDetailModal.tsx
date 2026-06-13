@@ -27,6 +27,7 @@ type OrderDetail = {
     unitPrice: string;
     kitchenStatus: string;
     kitchenNotes: string | null;
+    isCourtesy?: boolean;
     meal: { name: string };
 };
 
@@ -143,9 +144,11 @@ export default function OrderDetailModal({
         const orderSnapshot = {
             id: order.id,
             table: { number: order.table.number },
+            user: { name: order.user.name },
             orderDetails: order.orderDetails.map(d => ({
                 quantity: d.quantity,
                 unitPrice: d.unitPrice,
+                isCourtesy: d.isCourtesy,
                 meal: { name: d.meal.name },
             })),
         };

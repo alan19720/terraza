@@ -18,12 +18,14 @@ import { ORDER_ROUTES } from '@/lib/config/routes';
 type OrderDetail = {
     quantity: number;
     unitPrice: string;
+    isCourtesy?: boolean;
     meal: { name: string };
 };
 
 export type CheckoutOrder = {
     id: string;
     table: { number: string };
+    user?: { name: string };
     orderDetails: OrderDetail[];
 };
 

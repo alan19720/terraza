@@ -29,6 +29,110 @@ const PAYMENT_LABELS: Record<string, string> = {
     TRANSFER: 'Transferencia',
 };
 
+/* ────────────────────── Text Generator for RawBT ────────────────────── */
+function padRight(str: string, totalWidth: number, padChar = ' ') {
+    if (str.length >= totalWidth) return str.substring(0, totalWidth);
+    return str + padChar.repeat(totalWidth - str.length);
+}
+
+function alignLeftRight(left: string, right: string, totalWidth: number) {
+    if (left.length + right.length > totalWidth) {
+        left = left.substring(0, totalWidth - right.length - 1) + " ";
+    }
+    return left + " ".repeat(totalWidth - left.length - right.length) + right;
+}
+
+function centerText(text: string, width: number) {
+    if (text.length >= width) return text.substring(0, width);
+    const pad = Math.floor((width - text.length) / 2);
+    return " ".repeat(pad) + text + " ".repeat(width - text.length - pad);
+}
+
+function generateReceiptText(result: CheckoutResult): string {
+    const { payment, order, orderSnapshot, paymentMethod } = result;
+    
+    // Ignore courtesy items for the gross total printed on the receipt
+    const grossTotal = orderSnapshot.orderDetails.reduce(
+        (sum, d) => sum + (d.isCourtesy ? 0 : Number(d.unitPrice) * d.quantity),
+        0
+    );
+    const discountAmount = grossTotal * ((payment.discountPercent || 0) / 100);
+    const netFoodTotal = grossTotal - discountAmount;
+    const { subtotal, iva } = breakdown(netFoodTotal);
+    
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+
+    const WIDTH = 46; // Suitable for 80mm printers (usually 42-48)
+    let text = "";
+    const line = "-".repeat(WIDTH) + "\n";
+    
+    text += centerText("TERRAZA HUETAMEÑA", WIDTH) + "\n";
+    text += centerText("Mariscos y Especialidades", WIDTH) + "\n";
+    text += line;
+    text += `Mesa: ${orderSnapshot.table.number}\n`;
+    if (orderSnapshot.user?.name) {
+        text += `Mesero: ${orderSnapshot.user.name}\n`;
+    }
+    text += `Fecha: ${dateStr}   Hora: ${timeStr}\n`;
+    text += `Ticket: #${order.id.slice(0, 8).toUpperCase()}\n`;
+    text += line;
+    
+    // Header for items
+    // Format: [Qty]x [Item Name]                              [Price]
+    text += alignLeftRight("Cant Articulo", "Importe", WIDTH) + "\n";
+    text += line;
+    
+    orderSnapshot.orderDetails.forEach(d => {
+        const qtyStr = `${d.quantity}x `;
+        const maxNameLen = WIDTH - qtyStr.length - 10; // Reserve space for price
+        let name = d.meal.name;
+        if (name.length > maxNameLen) {
+            name = name.substring(0, maxNameLen);
+        }
+        const leftPart = qtyStr + name;
+        
+        let rightPart = "";
+        if (d.isCourtesy) {
+            rightPart = "CORTESIA";
+        } else {
+            const itemTotal = (Number(d.unitPrice) * d.quantity).toFixed(2);
+            rightPart = `$${itemTotal}`;
+        }
+        
+        text += alignLeftRight(leftPart, rightPart, WIDTH) + "\n";
+    });
+    
+    text += line;
+    
+    text += alignLeftRight("Subtotal", `$${grossTotal.toFixed(2)}`, WIDTH) + "\n";
+    if ((payment.discountPercent || 0) > 0) {
+        text += alignLeftRight(`Descuento (${payment.discountPercent}%)`, `-$${discountAmount.toFixed(2)}`, WIDTH) + "\n";
+    }
+    text += alignLeftRight("Subtotal (sin IVA)", `$${subtotal.toFixed(2)}`, WIDTH) + "\n";
+    text += alignLeftRight("IVA 16%", `$${iva.toFixed(2)}`, WIDTH) + "\n";
+    if (payment.tipAmount > 0) {
+        text += alignLeftRight("Propina", `+$${payment.tipAmount.toFixed(2)}`, WIDTH) + "\n";
+    }
+    text += line;
+    text += alignLeftRight("TOTAL", `$${payment.totalCharged.toFixed(2)}`, WIDTH) + "\n";
+    text += line;
+    
+    const paymentStr = PAYMENT_LABELS[paymentMethod] ?? (paymentMethod === 'PENDIENTE' ? 'PENDIENTE' : 'Efectivo');
+    if (paymentMethod === 'PENDIENTE') {
+        text += centerText("ESTADO: PENDIENTE DE PAGO", WIDTH) + "\n\n";
+    } else {
+        text += `Forma de pago: ${paymentStr.toUpperCase()}\n\n`;
+    }
+    text += centerText("¡Gracias por su preferencia!", WIDTH) + "\n";
+    text += centerText("Vuelva pronto", WIDTH) + "\n";
+    text += centerText("(Este ticket no es un CFDI)", WIDTH) + "\n";
+    text += "\n\n";
+
+    return text;
+}
+
 /* ────────────────────── Receipt content ────────────────────── */
 function ReceiptContent({ result }: { result: CheckoutResult }) {
     const { payment, order, orderSnapshot, paymentMethod } = result;
@@ -147,15 +251,20 @@ export default function ReceiptModal({ open, result, onClose }: Props) {
 
     const handlePrint = () => {
         setIsPrinting(true);
-        // Ensure browser paints the Tailwind @media print classes before triggering the spooler
-        setTimeout(() => {
-            window.print();
-            
-            // Clean up state roughly after print dialog is handled
+        try {
+            const receiptText = generateReceiptText(result);
+            // Use base64 encoding to prevent truncation and formatting breaks
+            const base64String = btoa(unescape(encodeURIComponent(receiptText)));
+            const rawbtUrl = 'rawbt:base64,' + base64String;
+            window.location.href = rawbtUrl;
+        } catch (error) {
+            console.error("Print Error:", error);
+            alert("Error al generar el ticket para RawBT.");
+        } finally {
             setTimeout(() => {
                 setIsPrinting(false);
-            }, 500);
-        }, 500);
+            }, 1000);
+        }
     };
 
     return (
