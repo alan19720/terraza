@@ -33,6 +33,12 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: true, data: newCategory }, { status: 201 });
     } catch (error) {
         console.error("Create InventoryCategory Error:", error);
+        if (error instanceof z.ZodError) {
+            return NextResponse.json(
+                { success: false, error: error.issues[0].message },
+                { status: 400 }
+            );
+        }
         return NextResponse.json(
             { success: false, error: 'Failed to create category' },
             { status: 500 }
