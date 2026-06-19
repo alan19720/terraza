@@ -13,6 +13,7 @@ const updateProductSchema = z.object({
     unitPrice: z.number().min(0).optional(),
     supplier: z.string().optional(),
     active: z.boolean().optional(),
+    categoryId: z.string().optional(),
 });
 
 /**
@@ -35,7 +36,7 @@ export async function PUT(
             return errorResponse(Object.values(errors).flat().join(', '), 400);
         }
 
-        const { name, description, unit, minimumStock, yieldPercent, grossWeight, unitPrice, supplier, active } = validation.data;
+        const { name, description, unit, minimumStock, yieldPercent, grossWeight, unitPrice, supplier, active, categoryId } = validation.data;
         const data: Record<string, unknown> = {};
         if (name !== undefined) data.name = name;
         if (description !== undefined) data.description = description || null;
@@ -46,6 +47,7 @@ export async function PUT(
         if (unitPrice !== undefined) data.unitPrice = unitPrice;
         if (supplier !== undefined) data.supplier = supplier || null;
         if (active !== undefined) data.active = active;
+        if (categoryId !== undefined) data.categoryId = categoryId || null;
 
         const product = await prisma.inventoryProduct.update({ where: { id }, data });
         return successResponse({ product }, 'Product updated successfully');

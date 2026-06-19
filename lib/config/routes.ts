@@ -97,6 +97,16 @@ export const INVENTORY_ROUTES = {
     DELETE: (id: string) => `${API_BASE}/inventory/${id}`,
     STOCK: `${API_BASE}/inventory/stock`,
     MOVEMENTS: `${API_BASE}/inventory/stock`,
+    ASSETS: {
+        LIST: `${API_BASE}/inventory/assets`,
+        CREATE: `${API_BASE}/inventory/assets`,
+        BY_ID: (id: string) => `${API_BASE}/inventory/assets/${id}`,
+    },
+    WAREHOUSE: {
+        LIST: `${API_BASE}/inventory/warehouse`,
+        CREATE: `${API_BASE}/inventory/warehouse`,
+        BY_ID: (id: string) => `${API_BASE}/inventory/warehouse/${id}`,
+    }
 } as const;
 
 /**

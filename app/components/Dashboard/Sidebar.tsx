@@ -16,7 +16,9 @@ import {
     Settings,
     ClipboardList,
     LayoutGrid,
-    GlassWater
+    GlassWater,
+    Tv,
+    Warehouse
 } from 'lucide-react';
 
 import { useAuth } from '@/app/contexts/AuthContext';
@@ -28,6 +30,8 @@ const menuItems = [
     { icon: GlassWater, label: 'Barra', href: '/dashboard/bartender', roles: ['ADMIN', 'BARRA'] },
     { icon: Wallet, label: 'Caja', href: '/dashboard/cashier', roles: ['ADMIN'] },
     { icon: Package, label: 'Inventario', href: '/dashboard/inventory', roles: ['ADMIN'] },
+    { icon: Tv, label: 'Inventario Inicial', href: '/dashboard/inventory/assets', roles: ['ADMIN'] },
+    { icon: Warehouse, label: 'Banco', href: '/dashboard/inventory/warehouse', roles: ['ADMIN', 'COCINA'] },
     { icon: ClipboardList, label: 'Recetario', href: '/dashboard/recipes', roles: ['ADMIN', 'COCINA'] },
     { icon: BookOpen, label: 'Menú', href: '/dashboard/menu', roles: ['ADMIN', 'COCINA'] },
     { icon: LayoutGrid, label: 'Mesas', href: '/dashboard/tables', roles: ['ADMIN'] },
