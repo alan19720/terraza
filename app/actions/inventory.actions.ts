@@ -158,3 +158,130 @@ export async function recordWarehousePurchase(
         return { success: false, error: 'Error interno en el servidor al registrar la compra' };
     }
 }
+
+// ─── Wastage (Mermas) System ─────────────────────────────────────────
+
+const reportWastageSchema = z.object({
+    ingredientId: z.string().min(1, 'El ID del insumo es requerido'),
+    quantity: z.number().positive('La cantidad debe ser mayor a 0'),
+    reason: z.string().min(1, 'El motivo es requerido')
+});
+
+export async function reportWastage(ingredientId: string, quantity: number, reason: string) {
+    try {
+        const data = reportWastageSchema.parse({ ingredientId, quantity, reason });
+
+        const ingredient = await prisma.inventoryProduct.findUnique({
+            where: { id: data.ingredientId }
+        });
+
+        if (!ingredient) {
+            return { success: false, error: 'Insumo no encontrado' };
+        }
+
+        const report = await prisma.wastageReport.create({
+            data: {
+                ingredientId: data.ingredientId,
+                quantity: data.quantity,
+                reason: data.reason,
+                status: 'PENDING'
+            }
+        });
+
+        return { success: true, data: report };
+    } catch (error) {
+        console.error("reportWastage error:", error);
+        if (error instanceof z.ZodError) {
+            return { success: false, error: error.issues[0].message };
+        }
+        return { success: false, error: 'Error al reportar merma' };
+    }
+}
+
+export async function getPendingWastageReports() {
+    try {
+        const reports = await prisma.wastageReport.findMany({
+            where: { status: 'PENDING' },
+            include: { ingredient: true },
+            orderBy: { createdAt: 'desc' }
+        });
+        return { success: true, data: reports };
+    } catch (error) {
+        console.error("getPendingWastageReports error:", error);
+        return { success: false, error: 'Error al obtener mermas pendientes' };
+    }
+}
+
+export async function approveWastage(reportId: string) {
+    try {
+        const report = await prisma.wastageReport.findUnique({
+            where: { id: reportId },
+            include: { ingredient: true }
+        });
+
+        if (!report) return { success: false, error: 'Reporte no encontrado' };
+        if (report.status !== 'PENDING') return { success: false, error: 'El reporte ya fue procesado' };
+
+        // Enforce integer for kitchen stock
+        const intQuantity = Math.round(Number(report.quantity));
+
+        await prisma.$transaction([
+            prisma.wastageReport.update({
+                where: { id: reportId },
+                data: { status: 'APPROVED' }
+            }),
+            prisma.inventoryProduct.update({
+                where: { id: report.ingredientId },
+                data: {
+                    currentStock: {
+                        decrement: intQuantity
+                    }
+                }
+            }),
+            prisma.inventoryMovement.create({
+                data: {
+                    productId: report.ingredientId,
+                    type: 'WASTAGE',
+                    quantity: intQuantity,
+                    description: `Merma aprobada: ${report.reason}`
+                }
+            }),
+            prisma.stockMovement.create({
+                data: {
+                    productId: report.ingredientId,
+                    type: 'OUT',
+                    quantity: intQuantity,
+                    notes: `Merma aprobada: ${report.reason}`
+                }
+            })
+        ]);
+
+        revalidatePath('/dashboard/inventory');
+        return { success: true };
+    } catch (error) {
+        console.error("approveWastage error:", error);
+        return { success: false, error: 'Error interno al aprobar merma' };
+    }
+}
+
+export async function rejectWastage(reportId: string) {
+    try {
+        const report = await prisma.wastageReport.findUnique({
+            where: { id: reportId }
+        });
+
+        if (!report) return { success: false, error: 'Reporte no encontrado' };
+        if (report.status !== 'PENDING') return { success: false, error: 'El reporte ya fue procesado' };
+
+        await prisma.wastageReport.update({
+            where: { id: reportId },
+            data: { status: 'REJECTED' }
+        });
+
+        revalidatePath('/dashboard/inventory');
+        return { success: true };
+    } catch (error) {
+        console.error("rejectWastage error:", error);
+        return { success: false, error: 'Error interno al rechazar merma' };
+    }
+}

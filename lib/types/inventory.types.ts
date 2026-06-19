@@ -61,6 +61,7 @@ export interface WarehouseItemRow {
     name: string;
     unit: string;
     currentStock: string;
+    minStockAlert: string;
     unitCost: string;
     createdAt: string;
 }
@@ -69,5 +70,6 @@ export interface WarehouseFormData {
     name: string;
     unit: string;
     currentStock: string;
+    minStockAlert: string;
     unitCost: string;
 }

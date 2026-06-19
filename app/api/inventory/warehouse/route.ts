@@ -6,7 +6,9 @@ const warehouseSchema = z.object({
     name: z.string().min(1, 'El nombre es requerido'),
     unit: z.string().min(1),
     currentStock: z.number().min(0),
+    minStockAlert: z.number().min(0).optional().default(0),
     unitCost: z.number().min(0),
+    categoryId: z.string().optional(),
 });
 
 export async function GET() {

@@ -11,10 +11,14 @@ import {
     Flame,
     CheckCircle2,
     GlassWater,
+    PackageSearch,
+    AlertOctagon,
+    X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { KitchenStatus } from '@prisma/client';
 import { KITCHEN_ROUTES } from '@/lib/config/routes';
+import { reportWastage } from '@/app/actions/inventory.actions';
 
 type KitchenLine = {
     id: string;
@@ -151,6 +155,61 @@ export default function KitchenQueue({ viewType = 'kitchen' }: { viewType?: 'kit
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+    // Inventory & Wastage states
+    const [inventoryModalOpen, setInventoryModalOpen] = useState(false);
+    const [inventoryItems, setInventoryItems] = useState<{id:string, name:string, currentStock:number, unit:string}[]>([]);
+    const [loadingInventory, setLoadingInventory] = useState(false);
+
+    const [wastageModalOpen, setWastageModalOpen] = useState(false);
+    const [wastageIngredientId, setWastageIngredientId] = useState('');
+    const [wastageQuantity, setWastageQuantity] = useState('');
+    const [wastageReason, setWastageReason] = useState('');
+    const [isSubmittingWastage, setIsSubmittingWastage] = useState(false);
+    const [wastageError, setWastageError] = useState<string | null>(null);
+    const [wastageSuccess, setWastageSuccess] = useState(false);
+
+    const fetchInventory = async () => {
+        setLoadingInventory(true);
+        try {
+            const res = await fetch('/api/inventory', { credentials: 'include' });
+            const json = await res.json();
+            if (res.ok && json.success) setInventoryItems(json.data.products || []);
+        } catch { /* ignore */ }
+        finally { setLoadingInventory(false); }
+    };
+
+    const handleOpenInventory = () => {
+        setInventoryModalOpen(true);
+        fetchInventory();
+    };
+
+    const handleOpenWastage = () => {
+        setWastageModalOpen(true);
+        setWastageIngredientId('');
+        setWastageQuantity('');
+        setWastageReason('');
+        setWastageError(null);
+        setWastageSuccess(false);
+        if (inventoryItems.length === 0) fetchInventory();
+    };
+
+    const submitWastage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!wastageIngredientId || !wastageQuantity || !wastageReason) return;
+        setIsSubmittingWastage(true);
+        setWastageError(null);
+        
+        const res = await reportWastage(wastageIngredientId, parseFloat(wastageQuantity), wastageReason);
+        setIsSubmittingWastage(false);
+
+        if (res.success) {
+            setWastageSuccess(true);
+            setTimeout(() => setWastageModalOpen(false), 2000);
+        } else {
+            setWastageError(res.error || 'Error al reportar merma');
+        }
+    };
+
     const fetchQueue = useCallback(async (quiet = false) => {
         if (!quiet) setLoading(true);
         try {
@@ -252,15 +311,25 @@ export default function KitchenQueue({ viewType = 'kitchen' }: { viewType?: 'kit
                         </p>
                     </div>
                 </div>
-                <button
-                    type="button"
-                    onClick={() => void fetchQueue(false)}
-                    disabled={loading}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-primary hover:bg-gray-50 cursor-pointer disabled:opacity-50 shrink-0"
-                >
-                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                    Actualizar
-                </button>
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+                    <button type="button" onClick={handleOpenInventory} className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-100 cursor-pointer shrink-0">
+                        <PackageSearch className="w-4 h-4" />
+                        Ver Inventario Actual
+                    </button>
+                    <button type="button" onClick={handleOpenWastage} className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-100 cursor-pointer shrink-0">
+                        <AlertOctagon className="w-4 h-4" />
+                        Reportar Merma
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => void fetchQueue(false)}
+                        disabled={loading}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-primary hover:bg-gray-50 cursor-pointer disabled:opacity-50 shrink-0"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                        Actualizar
+                    </button>
+                </div>
             </div>
 
             {loading && orders.length === 0 ? (
@@ -403,6 +472,106 @@ export default function KitchenQueue({ viewType = 'kitchen' }: { viewType?: 'kit
                             </section>
                         );
                     })}
+                </div>
+            )}
+
+            {/* ── Inventory Modal ─────────────────────────────────────── */}
+            {inventoryModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setInventoryModalOpen(false)} />
+                    <div className="relative bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+                            <h2 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                                <PackageSearch className="w-4 h-4 text-blue-600" />
+                                Inventario en Cocina/Barra
+                            </h2>
+                            <button onClick={() => setInventoryModalOpen(false)} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"><X className="w-4 h-4" /></button>
+                        </div>
+                        <div className="p-0 overflow-y-auto flex-1">
+                            {loadingInventory ? (
+                                <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 text-primary animate-spin" /></div>
+                            ) : inventoryItems.length === 0 ? (
+                                <p className="text-center text-sm text-gray-400 py-10">No hay insumos registrados.</p>
+                            ) : (
+                                <table className="w-full text-sm">
+                                    <thead className="bg-gray-50/50 sticky top-0">
+                                        <tr>
+                                            <th className="text-left py-3 px-6 text-[11px] font-semibold text-gray-500 uppercase">Insumo</th>
+                                            <th className="text-right py-3 px-6 text-[11px] font-semibold text-gray-500 uppercase">Stock Actual</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {inventoryItems.map(i => (
+                                            <tr key={i.id} className="hover:bg-gray-50/30">
+                                                <td className="px-6 py-3 font-medium text-gray-800">{i.name}</td>
+                                                <td className="px-6 py-3 text-right">
+                                                    <span className={`font-bold ${i.currentStock <= 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                                                        {i.currentStock}
+                                                    </span> <span className="text-gray-400 text-xs">{i.unit}</span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Wastage Modal ─────────────────────────────────────── */}
+            {wastageModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setWastageModalOpen(false)} />
+                    <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                            <h2 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                                <AlertOctagon className="w-4 h-4 text-red-600" />
+                                Reportar Merma
+                            </h2>
+                            <button onClick={() => setWastageModalOpen(false)} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"><X className="w-4 h-4" /></button>
+                        </div>
+                        {wastageSuccess ? (
+                            <div className="p-8 text-center space-y-3">
+                                <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <CheckCircle2 className="w-6 h-6" />
+                                </div>
+                                <h3 className="font-semibold text-gray-900">Reporte Enviado</h3>
+                                <p className="text-sm text-gray-500">La merma ha sido reportada y está pendiente de aprobación por administración.</p>
+                            </div>
+                        ) : (
+                            <form onSubmit={submitWastage} className="p-6 space-y-4">
+                                {wastageError && (<div className="bg-red-50 border border-red-100 text-red-600 text-xs rounded-lg px-3 py-2">{wastageError}</div>)}
+                                <p className="text-xs text-gray-500 mb-4 bg-gray-50 p-2 rounded">El reporte no descontará stock automáticamente; requerirá aprobación.</p>
+                                
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Insumo</label>
+                                    <select required value={wastageIngredientId} onChange={e => setWastageIngredientId(e.target.value)}
+                                        className="w-full h-9 px-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary/10 outline-none text-sm bg-white">
+                                        <option value="" disabled>Selecciona insumo...</option>
+                                        {inventoryItems.map(i => <option key={i.id} value={i.id}>{i.name} (Stock: {i.currentStock} {i.unit})</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Cantidad</label>
+                                    <input type="number" required min="0.01" step="0.01" value={wastageQuantity} onChange={e => setWastageQuantity(e.target.value)}
+                                        className="w-full h-9 px-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary/10 outline-none text-sm" placeholder="Ej. 2" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Motivo / Explicación</label>
+                                    <textarea required value={wastageReason} onChange={e => setWastageReason(e.target.value)} rows={3}
+                                        className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary/10 outline-none text-sm resize-none" placeholder="Ej. Se echó a perder, se quemó, se cayó al piso..." />
+                                </div>
+                                
+                                <div className="flex items-center justify-end gap-2 pt-2">
+                                    <button type="button" onClick={() => setWastageModalOpen(false)} className="px-4 py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer">Cancelar</button>
+                                    <button type="submit" disabled={isSubmittingWastage} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium shadow-sm transition-all disabled:opacity-50 cursor-pointer">
+                                        {isSubmittingWastage && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Enviar Reporte
+                                    </button>
+                                </div>
+                            </form>
+                        )}
+                    </div>
                 </div>
             )}
         </div>

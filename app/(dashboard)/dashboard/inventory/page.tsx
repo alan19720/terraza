@@ -7,10 +7,11 @@ import { useState, useEffect, useCallback } from 'react';
 import {
     Loader2, Plus, Pencil, Trash2, X, Search, AlertTriangle,
     ArrowUpCircle, ArrowDownCircle, Check, Ban, Package, ClipboardList,
-    Tags, Printer
+    Tags, Printer, AlertOctagon, CheckCircle2
 } from 'lucide-react';
 import Link from 'next/link';
 import { createInventoryCategory, deleteInventoryCategory } from '@/app/actions/category.actions';
+import { getPendingWastageReports, approveWastage, rejectWastage } from '@/app/actions/inventory.actions';
 
 const EMPTY_PRODUCT: ProductFormData = { name: '', description: '', unit: 'piezas', currentStock: '0', minimumStock: '0', yieldPercent: '100', grossWeight: '0', unitPrice: '0', supplier: '', active: true, categoryId: '' };
 const EMPTY_STOCK: StockFormData = { type: 'IN', quantity: '', notes: '' };
@@ -54,6 +55,47 @@ export default function InventoryPage() {
     const [printModalOpen, setPrintModalOpen] = useState(false);
     const [printType, setPrintType] = useState<'LOW_STOCK' | 'CATEGORY'>('LOW_STOCK');
     const [printCategoryId, setPrintCategoryId] = useState('');
+
+    // Wastage Modal
+    const [wastageModalOpen, setWastageModalOpen] = useState(false);
+    const [wastageReports, setWastageReports] = useState<any[]>([]);
+    const [loadingWastage, setLoadingWastage] = useState(false);
+    const [processingWastageId, setProcessingWastageId] = useState<string | null>(null);
+
+    const fetchPendingWastage = async () => {
+        setLoadingWastage(true);
+        const res = await getPendingWastageReports();
+        if (res.success) setWastageReports(res.data || []);
+        setLoadingWastage(false);
+    };
+
+    const handleOpenWastage = () => {
+        setWastageModalOpen(true);
+        fetchPendingWastage();
+    };
+
+    const handleApproveWastage = async (id: string) => {
+        setProcessingWastageId(id);
+        const res = await approveWastage(id);
+        if (res.success) {
+            fetchPendingWastage();
+            fetchProducts();
+        } else {
+            alert(res.error || 'Error al aprobar');
+        }
+        setProcessingWastageId(null);
+    };
+
+    const handleRejectWastage = async (id: string) => {
+        setProcessingWastageId(id);
+        const res = await rejectWastage(id);
+        if (res.success) {
+            fetchPendingWastage();
+        } else {
+            alert(res.error || 'Error al rechazar');
+        }
+        setProcessingWastageId(null);
+    };
 
     // ── Fetch ─────────────────────────────────────────────────────────
     const fetchProducts = useCallback(async () => {
@@ -339,6 +381,16 @@ export default function InventoryPage() {
                                 <Tags className="w-4 h-4" /> Categorías
                             </button>
                         )}
+                        {isAdmin && (
+                            <button onClick={handleOpenWastage} className="flex items-center gap-2 bg-white border border-red-200 hover:bg-red-50 text-red-700 px-4 py-2.5 rounded-lg shadow-sm transition-all text-sm font-medium cursor-pointer relative">
+                                <AlertOctagon className="w-4 h-4" /> Revisar Mermas
+                                {wastageReports.length > 0 && (
+                                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                                        {wastageReports.length}
+                                    </span>
+                                )}
+                            </button>
+                        )}
                         <Link href="/dashboard/inventory/kardex" className="flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 px-4 py-2.5 rounded-lg shadow-sm transition-all text-sm font-medium hidden sm:flex">
                             <ClipboardList className="w-4 h-4" /> Ver Kardex
                         </Link>
@@ -533,6 +585,65 @@ export default function InventoryPage() {
                                     <Printer className="w-3.5 h-3.5" /> Imprimir A4
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Wastage Approval Modal ─────────────────────────────────────── */}
+            {wastageModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setWastageModalOpen(false)} />
+                    <div className="relative bg-white rounded-xl shadow-xl w-full max-w-3xl mx-4 flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+                            <h2 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                                <AlertOctagon className="w-4 h-4 text-red-600" />
+                                Mermas Pendientes de Aprobación
+                            </h2>
+                            <button onClick={() => setWastageModalOpen(false)} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"><X className="w-4 h-4" /></button>
+                        </div>
+                        <div className="p-0 overflow-y-auto flex-1 bg-gray-50/50">
+                            {loadingWastage ? (
+                                <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 text-primary animate-spin" /></div>
+                            ) : wastageReports.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                                    <CheckCircle2 className="w-8 h-8 mb-2 text-emerald-400" />
+                                    <p className="text-sm">No hay mermas pendientes por revisar.</p>
+                                </div>
+                            ) : (
+                                <div className="p-6 space-y-4">
+                                    {wastageReports.map(report => (
+                                        <div key={report.id} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row gap-4 sm:items-center justify-between">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded">Merma Reportada</span>
+                                                    <span className="text-[11px] text-gray-400">{new Date(report.createdAt).toLocaleString('es-MX')}</span>
+                                                </div>
+                                                <h3 className="font-medium text-gray-900 mb-1">
+                                                    {report.ingredient?.name}
+                                                    <span className="mx-2 text-gray-300">|</span>
+                                                    <span className="font-bold text-red-600">-{report.quantity} {report.ingredient?.unit}</span>
+                                                </h3>
+                                                <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded italic">"{report.reason}"</p>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <button 
+                                                    onClick={() => handleRejectWastage(report.id)} 
+                                                    disabled={processingWastageId === report.id}
+                                                    className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50">
+                                                    Rechazar
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleApproveWastage(report.id)} 
+                                                    disabled={processingWastageId === report.id}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium shadow-sm transition-colors cursor-pointer disabled:opacity-50">
+                                                    {processingWastageId === report.id && <Loader2 className="w-3 h-3 animate-spin" />} Aprobar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
