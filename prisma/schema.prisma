@@ -158,8 +158,9 @@ model InventoryProduct {
   categoryId   String?
   category     InventoryCategory? @relation(fields: [categoryId], references: [id])
 
-  stockMovements    StockMovement[]
-  recipeIngredients RecipeIngredient[]
+  stockMovements     StockMovement[]
+  inventoryMovements InventoryMovement[]
+  recipeIngredients  RecipeIngredient[]
 }
 
 model StockMovement {
@@ -229,6 +230,8 @@ model WarehouseItem {
 
   categoryId   String?
   category     InventoryCategory? @relation(fields: [categoryId], references: [id])
+  
+  inventoryMovements InventoryMovement[]
 }
 
 model InventoryCategory {
@@ -239,4 +242,18 @@ model InventoryCategory {
 
   products       InventoryProduct[]
   warehouseItems WarehouseItem[]
+}
+
+model InventoryMovement {
+  id              String   @id @default(uuid())
+  createdAt       DateTime @default(now())
+  quantity        Decimal
+  type            String   
+  description     String?
+
+  productId       String?
+  product         InventoryProduct? @relation(fields: [productId], references: [id])
+  
+  warehouseItemId String?
+  warehouseItem   WarehouseItem? @relation(fields: [warehouseItemId], references: [id])
 }

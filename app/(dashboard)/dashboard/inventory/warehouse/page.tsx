@@ -5,9 +5,9 @@ import { INVENTORY_ROUTES } from '@/lib/config/routes';
 import { WarehouseItemRow, WarehouseFormData } from '@/lib/types/inventory.types';
 import { useState, useEffect, useCallback } from 'react';
 import {
-    Loader2, Plus, Pencil, Trash2, X, Search, PackageOpen, ArrowRightLeft
+    Loader2, Plus, Pencil, Trash2, X, Search, PackageOpen, ArrowRightLeft, ArrowDownToLine
 } from 'lucide-react';
-import { transferStockToKitchen } from '@/app/actions/inventory.actions';
+import { transferStockToKitchen, recordWarehousePurchase } from '@/app/actions/inventory.actions';
 import Link from 'next/link';
 
 const EMPTY_ITEM: WarehouseFormData = { name: '', unit: 'PZ', currentStock: '0', unitCost: '0' };
@@ -43,6 +43,14 @@ export default function WarehousePage() {
     const [transferQuantity, setTransferQuantity] = useState('');
     const [transferError, setTransferError] = useState<string | null>(null);
     const [isTransferring, setIsTransferring] = useState(false);
+
+    // Purchase Entry Modal
+    const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
+    const [purchaseItem, setPurchaseItem] = useState<WarehouseItemRow | null>(null);
+    const [purchaseQuantity, setPurchaseQuantity] = useState('');
+    const [purchaseCost, setPurchaseCost] = useState('');
+    const [purchaseError, setPurchaseError] = useState<string | null>(null);
+    const [isPurchasing, setIsPurchasing] = useState(false);
 
     const fetchItems = useCallback(async () => {
         try {
@@ -151,6 +159,43 @@ export default function WarehousePage() {
             fetchItems(); // Refresh current warehouse stock
         } else {
             setTransferError(res.error || 'Error al transferir stock');
+            window.alert('Error: ' + (res.error || 'Desconocido'));
+        }
+    };
+
+    // Purchase Handling
+    const openPurchase = (i: WarehouseItemRow) => {
+        setPurchaseItem(i);
+        setPurchaseQuantity('');
+        setPurchaseCost(String(i.unitCost)); // Default to current cost
+        setPurchaseError(null);
+        setPurchaseModalOpen(true);
+    };
+
+    const closePurchaseModal = () => {
+        setPurchaseModalOpen(false);
+        setPurchaseItem(null);
+    };
+
+    const handlePurchase = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!purchaseItem || !purchaseQuantity) return;
+        setIsPurchasing(true);
+        setPurchaseError(null);
+        
+        const res = await recordWarehousePurchase(
+            purchaseItem.id, 
+            parseFloat(purchaseQuantity), 
+            purchaseCost ? parseFloat(purchaseCost) : undefined
+        );
+        setIsPurchasing(false);
+        
+        if (res.success) {
+            closePurchaseModal();
+            fetchItems();
+        } else {
+            setPurchaseError(res.error || 'Error al registrar entrada');
+            window.alert('Error: ' + (res.error || 'Desconocido'));
         }
     };
 
@@ -239,6 +284,9 @@ export default function WarehousePage() {
                                             <td className="px-5 py-3.5 text-right font-semibold text-gray-800">{i.currentStock}</td>
                                             <td className="px-5 py-3.5">
                                                 <div className="flex items-center justify-end gap-1">
+                                                    <button onClick={() => openPurchase(i)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors cursor-pointer text-xs font-medium mr-2" title="Registrar Entrada / Compra">
+                                                        <ArrowDownToLine className="w-3.5 h-3.5" /> Entrada
+                                                    </button>
                                                     <button onClick={() => openTransfer(i)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer text-xs font-medium mr-2" title="Traspasar a Cocina">
                                                         <ArrowRightLeft className="w-3.5 h-3.5" /> Traspasar
                                                     </button>
@@ -297,6 +345,50 @@ export default function WarehousePage() {
                                 <button type="submit" disabled={isTransferring || !transferTargetId} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium shadow-sm hover:shadow-md transition-all disabled:opacity-50 cursor-pointer">
                                     {isTransferring && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                                     Confirmar Traspaso
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Purchase Entry Modal ─────────────────────────────────────── */}
+            {purchaseModalOpen && purchaseItem && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={closePurchaseModal} />
+                    <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                            <h2 className="text-sm font-semibold text-gray-800">Registrar Entrada / Compra</h2>
+                            <button onClick={closePurchaseModal} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"><X className="w-4 h-4" /></button>
+                        </div>
+                        <form onSubmit={handlePurchase} className="p-6 space-y-4">
+                            {purchaseError && (<div className="bg-red-50 border border-red-100 text-red-600 text-xs rounded-lg px-3 py-2">{purchaseError}</div>)}
+                            
+                            <div className="bg-blue-50 text-blue-800 p-3 rounded-lg text-sm mb-4">
+                                Entrada para <strong>{purchaseItem.name}</strong> (Stock Actual: {purchaseItem.currentStock} {purchaseItem.unit})
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Cantidad Entrante</label>
+                                    <input type="number" required min="0.01" step="0.01" value={purchaseQuantity} onChange={(e) => setPurchaseQuantity(e.target.value)}
+                                        className="w-full h-9 px-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none text-sm text-gray-700 transition-all" placeholder="Ej. 50" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Costo Unitario (opcional)</label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                                        <input type="number" min="0" step="0.01" value={purchaseCost} onChange={(e) => setPurchaseCost(e.target.value)}
+                                            className="w-full h-9 pl-7 px-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none text-sm text-gray-700 transition-all" placeholder="0.00" />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-end gap-2 pt-2">
+                                <button type="button" onClick={closePurchaseModal} className="px-4 py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer">Cancelar</button>
+                                <button type="submit" disabled={isPurchasing || !purchaseQuantity} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium shadow-sm hover:shadow-md transition-all disabled:opacity-50 cursor-pointer">
+                                    {isPurchasing && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                                    Registrar Entrada
                                 </button>
                             </div>
                         </form>
