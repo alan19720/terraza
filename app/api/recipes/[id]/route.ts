@@ -26,10 +26,11 @@ const updateRecipeSchema = z.object({
  */
 export async function PUT(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    props: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
+        const params = await props.params;
+        const { id } = params;
         const existing = await prisma.recipe.findUnique({ where: { id } });
         if (!existing) return errorResponse('Recipe not found', 404);
 
@@ -101,10 +102,11 @@ export async function PUT(
  */
 export async function DELETE(
     _request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    props: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
+        const params = await props.params;
+        const { id } = params;
         const existing = await prisma.recipe.findUnique({ where: { id } });
         if (!existing) return errorResponse('Recipe not found', 404);
 

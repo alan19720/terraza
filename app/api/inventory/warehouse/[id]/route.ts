@@ -13,10 +13,11 @@ const warehouseSchema = z.object({
 
 export async function PUT(
     req: Request,
-    { params }: { params: Promise<{ id: string }> }
+    props: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
+        const params = await props.params;
+        const { id } = params;
         const body = await req.json();
         const data = warehouseSchema.parse(body);
 
@@ -43,10 +44,11 @@ export async function PUT(
 
 export async function DELETE(
     req: Request,
-    { params }: { params: Promise<{ id: string }> }
+    props: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
+        const params = await props.params;
+        const { id } = params;
         await prisma.warehouseItem.delete({
             where: { id }
         });

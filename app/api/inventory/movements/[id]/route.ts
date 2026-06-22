@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/prisma/prisma';
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, props: { params: Promise<{ id: string }> }) {
     try {
+        const params = await props.params;
         const { id } = params;
         
         const movements = await prisma.inventoryMovement.findMany({

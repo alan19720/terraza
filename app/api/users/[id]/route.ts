@@ -18,10 +18,11 @@ const updateUserSchema = z.object({
  */
 export async function PUT(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    props: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
+        const params = await props.params;
+        const { id } = params;
 
         const existing = await prisma.user.findUnique({ where: { id } });
         if (!existing) {

@@ -13,10 +13,11 @@ const updateCategorySchema = z.object({
  */
 export async function PUT(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    props: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
+        const params = await props.params;
+        const { id } = params;
         const existing = await prisma.category.findUnique({ where: { id } });
         if (!existing) return errorResponse('Category not found', 404);
 

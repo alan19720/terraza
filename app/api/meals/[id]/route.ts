@@ -17,10 +17,11 @@ const updateMealSchema = z.object({
  */
 export async function PUT(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    props: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
+        const params = await props.params;
+        const { id } = params;
         const existing = await prisma.meal.findUnique({ where: { id } });
         if (!existing) return errorResponse('Meal not found', 404);
 
